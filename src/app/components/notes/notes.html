@@ -37,6 +37,26 @@
 </div>
 
 
+<!-- Sorting Controls -->
+<div class="max-w-6xl mx-auto mt-4 px-4 flex justify-end gap-4 items-center">
+  <div>
+    <label class="text-sm text-gray-600 mr-1">Sort By:</label>
+    <select [(ngModel)]="sortBy" (change)="onSortChange()" class="border px-2 py-1 rounded text-sm bg-white">
+      <option value="createdAt">Created Date</option>
+      <option value="updatedAt">Updated Date</option>
+      <option value="name">Name</option>
+    </select>
+  </div>
+  <div>
+    <label class="text-sm text-gray-600 mr-1">Order:</label>
+    <select [(ngModel)]="sortOrder" (change)="onSortChange()" class="border px-2 py-1 rounded text-sm bg-white">
+      <option value="desc">Descending</option>
+      <option value="asc">Ascending</option>
+    </select>
+  </div>
+</div>
+
+
 <!-- Notes List Section -->
 <div class="max-w-6xl mx-auto mt-12 px-4">
   <h3 class="text-2xl font-extrabold text-blue-800 mb-6 text-center">📒 Your Notes</h3>

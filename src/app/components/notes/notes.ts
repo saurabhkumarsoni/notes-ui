@@ -3,6 +3,7 @@ import {
   OnInit,
   ChangeDetectorRef,
   ChangeDetectionStrategy,
+  NgZone,
 } from '@angular/core';
 import { NoteService } from '../../services/note';
 import { Note } from '../../models/note.model';
@@ -23,9 +24,10 @@ import { CommonModule } from '@angular/common';
   templateUrl: './notes.html',
   styleUrl: './notes.css',
   standalone: true,
-  changeDetection: ChangeDetectionStrategy.OnPush,
 })
 export class Notes implements OnInit {
+  sortBy: string = 'createdAt';
+  sortOrder: string = 'desc';
   isSearching: boolean = false;
   currentPage: number = 1;
   totalPages: number = 1;
@@ -39,7 +41,8 @@ export class Notes implements OnInit {
   constructor(
     private noteService: NoteService,
     private fb: FormBuilder,
-    private cdr: ChangeDetectorRef
+    private cdr: ChangeDetectorRef,
+    private zone: NgZone
   ) {}
 
   ngOnInit(): void {
@@ -53,19 +56,29 @@ export class Notes implements OnInit {
   getAllNotes(): void {
     if (this.isSearching && this.searchTerm.trim()) {
       this.noteService
-        .searchNotes(this.searchTerm.trim(), this.currentPage, this.limit)
+        .searchNotes(
+          this.searchTerm.trim(),
+          this.currentPage,
+          this.limit,
+          this.sortBy,
+          this.sortOrder
+        )
         .subscribe((response) => {
-          this.notes = response.notes;
-          this.totalPages = response.totalPages;
-          this.cdr.markForCheck();
+          this.zone.run(() => {
+            this.notes = [...response.notes];
+            this.totalPages = response.totalPages;
+            this.cdr.markForCheck();
+          });
         });
     } else {
       this.noteService
-        .getNotes(this.currentPage, this.limit)
+        .getNotes(this.currentPage, this.limit, this.sortBy, this.sortOrder)
         .subscribe((response) => {
-          this.notes = response.notes;
-          this.totalPages = response.totalPages;
-          this.cdr.markForCheck();
+          this.zone.run(() => {
+            this.notes = [...response.notes];
+            this.totalPages = response.totalPages;
+            this.cdr.markForCheck();
+          });
         });
     }
   }
@@ -82,8 +95,10 @@ export class Notes implements OnInit {
       });
     } else {
       this.noteService.addNote(note).subscribe(() => {
-        this.getAllNotes();
-        this.noteForm.reset();
+        this.zone.run(() => {
+          this.getAllNotes();
+          this.noteForm.reset();
+        });
       });
     }
   }
@@ -123,5 +138,10 @@ export class Notes implements OnInit {
       this.currentPage = page;
       this.getAllNotes();
     }
+  }
+
+  onSortChange(): void {
+    this.currentPage = 1; // Reset to first page
+    this.getAllNotes();
   }
 }

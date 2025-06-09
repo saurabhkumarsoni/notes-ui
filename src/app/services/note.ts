@@ -13,10 +13,12 @@ export class NoteService {
 
   getNotes(
     page: number = 1,
-    limit: number = 6
+    limit: number = 6,
+    sortBy: string = 'createdAt',
+    order: string = 'desc'
   ): Observable<{ notes: Note[]; totalPages: number }> {
     return this.http.get<{ notes: Note[]; totalPages: number }>(
-      `${this.apiUrl}?page=${page}&limit=${limit}`
+      `${this.apiUrl}?page=${page}&limit=${limit}&sortBy=${sortBy}&order=${order}`
     );
   }
 
@@ -36,10 +38,15 @@ export class NoteService {
     return this.http.delete(`${this.apiUrl}/${id}`);
   }
 
- searchNotes(query: string, page: number = 1, limit: number = 6) {
-  return this.http.get<{ notes: Note[]; totalPages: number }>(
-    `${this.apiUrl}/search?query=${query}&page=${page}&limit=${limit}`
-  );
-}
-
+  searchNotes(
+    query: string,
+    page: number = 1,
+    limit: number = 6,
+    sortBy: string = 'createdAt',
+    order: string = 'desc'
+  ): Observable<{ notes: Note[]; totalPages: number }> {
+    return this.http.get<{ notes: Note[]; totalPages: number }>(
+      `${this.apiUrl}/search?query=${query}&page=${page}&limit=${limit}&sortBy=${sortBy}&order=${order}`
+    );
+  }
 }
