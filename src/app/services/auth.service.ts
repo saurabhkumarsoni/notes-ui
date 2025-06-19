@@ -4,12 +4,13 @@ import { Injectable } from '@angular/core';
 @Injectable({ providedIn: 'root' })
 export class AuthService {
   private isBrowser = typeof window !== 'undefined';
-  private baseUrl = 'http://localhost:5000/api/users';
+  //   private baseUrl = 'http://localhost:5000/api/users';
+  private baseUrl = 'http://localhost:3000/auth';
 
   constructor(private http: HttpClient) {}
 
   register(data: { email: string; password: string }) {
-    return this.http.post<{ token: string }>(`${this.baseUrl}/register`, data);
+    return this.http.post<{ token: string }>(`${this.baseUrl}/signup`, data);
   }
 
   login(data: { email: string; password: string }) {

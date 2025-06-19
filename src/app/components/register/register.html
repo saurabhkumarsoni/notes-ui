@@ -27,14 +27,39 @@
       </div>
 
       <!-- User ID -->
-      <div>
+      <!-- <div>
         <input type="text" placeholder="User ID" formControlName="userId"
           class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500" />
         <div *ngIf="registrationForm.get('userId')?.touched && registrationForm.get('userId')?.invalid"
           class="text-sm text-red-500 mt-1">
           User ID is required
         </div>
+      </div> -->
+      <div>
+        <input type="number" placeholder="Age" formControlName="age"
+          class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500" />
+        <div *ngIf="registrationForm.get('age')?.touched && registrationForm.get('age')?.invalid"
+          class="text-sm text-red-500 mt-1">
+          Age is required and must be valid
+        </div>
       </div>
+      <div class="flex items-center gap-4">
+        <label class="font-medium">Gender:</label>
+        <label>
+          <input type="radio" formControlName="gender" value="male" class="mr-1" /> Male
+        </label>
+        <label>
+          <input type="radio" formControlName="gender" value="female" class="mr-1" /> Female
+        </label>
+      </div>
+
+      <div class="flex items-center">
+        <input type="checkbox" formControlName="isMarried" class="mr-2" />
+        <label class="mr-2">Married</label>
+      </div>
+
+
+
 
       <!-- Email -->
       <div>

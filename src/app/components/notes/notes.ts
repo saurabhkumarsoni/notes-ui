@@ -2,8 +2,10 @@ import {
   Component,
   OnInit,
   ChangeDetectorRef,
-  ChangeDetectionStrategy,
   NgZone,
+  AfterViewChecked,
+  ElementRef,
+  ViewChild,
 } from '@angular/core';
 import { NoteService } from '../../services/note';
 import { Note } from '../../models/note.model';
@@ -16,6 +18,8 @@ import {
 } from '@angular/forms';
 import { HttpClientModule } from '@angular/common/http';
 import { CommonModule } from '@angular/common';
+import { Subject } from 'rxjs';
+import { debounceTime, distinctUntilChanged, switchMap } from 'rxjs/operators';
 
 @Component({
   selector: 'app-notes',
@@ -25,7 +29,11 @@ import { CommonModule } from '@angular/common';
   styleUrl: './notes.css',
   standalone: true,
 })
-export class Notes implements OnInit {
+export class Notes implements OnInit, AfterViewChecked {
+  private searchInput$ = new Subject<string>();
+
+  @ViewChild('noteTitleInput') noteTitleInputRef!: ElementRef<HTMLInputElement>;
+  private shouldFocusInput = false;
   sortBy: string = 'createdAt';
   sortOrder: string = 'desc';
   isSearching: boolean = false;
@@ -50,7 +58,33 @@ export class Notes implements OnInit {
       name: ['', Validators.required],
       content: ['', Validators.required],
     });
-    this.getAllNotes();
+
+    this.searchInput$
+      .pipe(
+        debounceTime(400),
+        distinctUntilChanged(),
+        switchMap((term) => {
+          this.searchTerm = term.trim();
+          this.currentPage = 1;
+          this.isSearching = !!this.searchTerm;
+          return this.noteService.searchNotes(
+            this.searchTerm,
+            this.currentPage,
+            this.limit,
+            this.sortBy,
+            this.sortOrder
+          );
+        })
+      )
+      .subscribe((response) => {
+        this.zone.run(() => {
+          this.notes = [...response.notes];
+          this.totalPages = response.totalPages;
+          this.cdr.markForCheck();
+        });
+      });
+
+    this.getAllNotes(); // load initial notes
   }
 
   getAllNotes(): void {
@@ -64,6 +98,7 @@ export class Notes implements OnInit {
           this.sortOrder
         )
         .subscribe((response) => {
+          console.log('response of notes list', response);
           this.zone.run(() => {
             this.notes = [...response.notes];
             this.totalPages = response.totalPages;
@@ -105,7 +140,8 @@ export class Notes implements OnInit {
 
   onEdit(note: Note): void {
     this.noteForm.patchValue(note);
-    this.editingNoteId = note._id!;
+    this.editingNoteId = this.getNoteId(note);
+    this.shouldFocusInput = true;
   }
 
   cancelEdit(): void {
@@ -121,15 +157,12 @@ export class Notes implements OnInit {
   }
 
   trackByNoteId(index: number, note: Note): string {
-    return note._id!;
+    return note._id ?? note.id ?? '';
   }
 
   // search
   onSearch(): void {
-    const trimmed = this.searchTerm.trim();
-    this.currentPage = 1; // reset to first page
-    this.isSearching = !!trimmed;
-    this.getAllNotes();
+    this.searchInput$.next(this.searchTerm);
   }
 
   // pagination
@@ -143,5 +176,16 @@ export class Notes implements OnInit {
   onSortChange(): void {
     this.currentPage = 1; // Reset to first page
     this.getAllNotes();
+  }
+
+  getNoteId(note: Note): string {
+    return note._id ?? note.id ?? ''; // fallback to empty if none
+  }
+
+  ngAfterViewChecked(): void {
+    if (this.shouldFocusInput && this.noteTitleInputRef) {
+      this.noteTitleInputRef.nativeElement.focus();
+      this.shouldFocusInput = false;
+    }
   }
 }

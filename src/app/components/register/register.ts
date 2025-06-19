@@ -37,7 +37,9 @@ export class Register implements OnInit {
     this.registrationForm = this.fb.group({
       firstName: ['', Validators.required],
       lastName: ['', Validators.required],
-      userId: ['', Validators.required],
+      age: [null, [Validators.required, Validators.min(1)]],
+      gender: ['male', Validators.required],
+      isMarried: [false],
       email: ['', [Validators.required, Validators.email]],
       password: ['', [Validators.required, Validators.minLength(6)]],
     });
@@ -49,12 +51,9 @@ export class Register implements OnInit {
     const formData = this.registrationForm.value;
 
     this.authService.register(formData).subscribe({
-      next: (res) => {
-        this.router.navigate(['/login']);
-      },
-      error: (err) => {
-        this.message = err.error.message || 'Registration failed';
-      },
+      next: (res) => this.router.navigate(['/login']),
+      error: (err) =>
+        (this.message = err.error.message || 'Registration failed'),
     });
   }
 }
