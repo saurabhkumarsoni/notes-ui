@@ -1,0 +1,11 @@
+<div class="crop-container">
+  <h2>Edit Profile Image</h2>
+
+  <image-cropper [imageFile]="data.file" [autoCrop]="true" format="png" (imageCropped)="onImageCropped($event)">
+  </image-cropper>
+
+  <div class="actions">
+    <button mat-button (click)="onClose()">Cancel</button>
+    <button mat-raised-button color="primary" (click)="onAccept()">Accept</button>
+  </div>
+</div>

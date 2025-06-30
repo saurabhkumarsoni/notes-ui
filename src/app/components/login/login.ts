@@ -38,12 +38,13 @@ export class Login implements OnInit {
 
     this.auth.login(this.loginForm.value).subscribe({
       next: (res) => {
-        this.auth.storeToken(res.token);
+        this.auth.setTokens(res.accessToken, res.refreshToken);
+        this.auth.setUser(res.user)
         this.message = 'Logged in successfully!';
         this.router.navigate(['/notes']);
       },
       error: (err) => {
-        this.message = err.error.message || 'Login failed';
+        this.message = err.error?.message || 'Login failed';
       },
     });
   }

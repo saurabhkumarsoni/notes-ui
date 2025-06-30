@@ -1,0 +1,91 @@
+[
+  {
+    "id": "5d1f6c10-a1b2-4e7d-a5ea-000000000001",
+    "name": "Anjali Mehta",
+    "position": "Engineering Manager",
+    "project": "Notes App Platform",
+    "image": "https://randomuser.me/api/portraits/men/10i.jpg",
+    "reportsToId": null
+  },
+  {
+    "id": "5d1f6c10-a1b2-4e7d-a5ea-000000000002",
+    "name": "Saurabh Kumar",
+    "position": "Software Engineer",
+    "project": "Notes App Platform",
+    "image": "https://randomuser.me/api/portraits/men/10bh.jpg",
+    "reportsToId": "5d1f6c10-a1b2-4e7d-a5ea-000000000001"
+  },
+  {
+    "id": "5d1f6c10-a1b2-4e7d-a5ea-000000000003",
+    "name": "Amit Singh",
+    "position": "Backend Developer",
+    "project": "Notes App Platform",
+    "image": "https://randomuser.me/api/portraits/men/10jpg",
+    "reportsToId": "5d1f6c10-a1b2-4e7d-a5ea-000000000001"
+  },
+  {
+    "id": "5d1f6c10-a1b2-4e7d-a5ea-000000000004",
+    "name": "Priya Das",
+    "position": "QA Engineer",
+    "project": "Notes App Platform",
+    "image": "https://randomuser.me/api/portraits/men/10.jpg",
+    "reportsToId": "5d1f6c10-a1b2-4e7d-a5ea-000000000001"
+  },
+  {
+    "id": "5d1f6c10-a1b2-4e7d-a5ea-000000000005",
+    "name": "Rahul Verma",
+    "position": "Senior Engineering Manager",
+    "project": "Quality Management System",
+    "image": "https://randomuser.me/api/portraits/men/1.jpg",
+    "reportsToId": null
+  },
+  {
+    "id": "5d1f6c10-a1b2-4e7d-a5ea-000000000006",
+    "name": "Neha Sharma",
+    "position": "Frontend Developer",
+    "project": "Quality Management System",
+    "image": "https://randomuser.me/api/portraits/men/2.jpg",
+    "reportsToId": "5d1f6c10-a1b2-4e7d-a5ea-000000000005"
+  },
+  {
+    "id": "5d1f6c10-a1b2-4e7d-a5ea-000000000007",
+    "name": "Vinod Khanna",
+    "position": "DevOps Engineer",
+    "project": "Quality Management System",
+    "image": "https://randomuser.me/api/portraits/men/3.jpg",
+    "reportsToId": "5d1f6c10-a1b2-4e7d-a5ea-000000000005"
+  },
+  {
+    "id": "5d1f6c10-a1b2-4e7d-a5ea-000000000008",
+    "name": "Sneha Rao",
+    "position": "UI/UX Designer",
+    "project": "Quality Management System",
+    "image": "https://randomuser.me/api/portraits/men/4.jpg",
+    "reportsToId": "5d1f6c10-a1b2-4e7d-a5ea-000000000005"
+  },
+  {
+    "id": "5d1f6c10-a1b2-4e7d-a5ea-000000000009",
+    "name": "Manoj Patil",
+    "position": "Associate Engineer",
+    "project": "Notes App Platform",
+    "image": "https://randomuser.me/api/portraits/men/5.jpg",
+    "reportsToId": "5d1f6c10-a1b2-4e7d-a5ea-000000000001"
+  },
+  {
+    "id": "5d1f6c10-a1b2-4e7d-a5ea-000000000010",
+    "name": "Deepika Roy",
+    "position": "Intern",
+    "project": "Notes App Platform",
+    "image": "https://randomuser.me/api/portraits/men/6.jpg",
+    "reportsToId": "5d1f6c10-a1b2-4e7d-a5ea-000000000001"
+  },
+   {
+    "id": "5d1f6c10-a1b2-4e7d-a5ea-000000000010",
+    "name": "Deepika Roy",
+    "position": "Intern",
+    "project": "Notes App Platform",
+    "image": "https://randomuser.me/api/portraits/men/6.jpg",
+    "reportsToId": "5d1f6c10-a1b2-4e7d-a5ea-000000000001"
+  },
+  
+]
