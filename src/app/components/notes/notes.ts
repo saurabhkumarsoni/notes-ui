@@ -300,4 +300,9 @@ export class Notes implements OnInit, AfterViewChecked {
   trackByNoteId(index: number, note: Note): string {
     return note._id ?? note.id ?? '';
   }
+
+  getCategoryName(categoryId: number | null | undefined): string {
+    const cat = this.categories().find((c) => c.id === categoryId);
+    return cat?.name ?? 'Uncategorized';
+  }
 }

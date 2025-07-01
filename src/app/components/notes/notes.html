@@ -72,7 +72,7 @@
           </span>
         </div>
 
-        <p><strong>Category:</strong> {{ note.category?.name || 'Uncategorized' }}</p>
+        <p><strong>Category:</strong> {{ getCategoryName(note.categoryId) }}</p>
 
         <div class="text-sm text-gray-400 mb-3">
           Created: {{ note.createdAt | date:'short' }}<br />
