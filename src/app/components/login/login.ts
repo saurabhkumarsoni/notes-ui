@@ -2,49 +2,60 @@ import { Component, OnInit } from '@angular/core';
 import {
   FormBuilder,
   FormGroup,
-  FormsModule,
-  ReactiveFormsModule,
   Validators,
+  ReactiveFormsModule,
+  FormsModule,
 } from '@angular/forms';
-import { AuthService } from '../../services/auth.service';
 import { Router, RouterLink } from '@angular/router';
-import { jwtDecode } from 'jwt-decode';
+import { AuthService } from '../../services/auth.service';
+import { AlertService } from '../../shared/alert.service';
 
 @Component({
   selector: 'app-login',
+  standalone: true,
   imports: [ReactiveFormsModule, FormsModule, RouterLink],
   templateUrl: './login.html',
   styleUrl: './login.css',
 })
 export class Login implements OnInit {
   loginForm!: FormGroup;
-  message = '';
 
   constructor(
     private fb: FormBuilder,
-    private auth: AuthService,
+    private authService: AuthService,
+    private alert: AlertService,
     private router: Router
   ) {}
 
   ngOnInit(): void {
+    this.buildForm();
+  }
+
+  private buildForm(): void {
     this.loginForm = this.fb.group({
       email: ['', [Validators.required, Validators.email]],
       password: ['', Validators.required],
     });
   }
+  onSubmit(): void {
+    if (this.loginForm.invalid) {
+      this.alert.error('Please enter valid email and password.');
+      return;
+    }
 
-  onSubmit() {
-    if (this.loginForm.invalid) return;
-
-    this.auth.login(this.loginForm.value).subscribe({
+    this.authService.login(this.loginForm.value).subscribe({
       next: (res) => {
-        this.auth.setTokens(res.accessToken, res.refreshToken);
-        this.auth.setUser(res.user)
-        this.message = 'Logged in successfully!';
+        this.authService.setTokens(res.accessToken, res.refreshToken);
+        this.authService.setUser(res.user);
+        this.alert.success('Logged in successfully ✅');
         this.router.navigate(['/notes']);
       },
       error: (err) => {
-        this.message = err.error?.message || 'Login failed';
+        const message =
+          err?.error?.message?.message || // NestJS custom message
+          err?.error?.message || // default string message
+          'Login failed. Please try again.';
+        this.alert.error(message);
       },
     });
   }

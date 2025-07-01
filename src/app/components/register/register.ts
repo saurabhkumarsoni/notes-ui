@@ -4,20 +4,22 @@ import { Component, OnInit } from '@angular/core';
 import {
   FormBuilder,
   FormGroup,
-  FormsModule,
-  ReactiveFormsModule,
   Validators,
+  ReactiveFormsModule,
+  FormsModule,
 } from '@angular/forms';
-import { AuthService } from '../../services/auth.service';
 import { Router, RouterLink } from '@angular/router';
+import { AuthService } from '../../services/auth.service';
+import { AlertService } from '../../shared/alert.service';
 
 @Component({
   selector: 'app-register',
+  standalone: true,
   imports: [
     CommonModule,
     ReactiveFormsModule,
-    HttpClientModule,
     FormsModule,
+    HttpClientModule,
     RouterLink,
   ],
   templateUrl: './register.html',
@@ -25,15 +27,19 @@ import { Router, RouterLink } from '@angular/router';
 })
 export class Register implements OnInit {
   registrationForm!: FormGroup;
-  message!: string;
 
   constructor(
     private fb: FormBuilder,
     private authService: AuthService,
+    private alert: AlertService,
     private router: Router
   ) {}
 
   ngOnInit(): void {
+    this.initForm();
+  }
+
+  private initForm(): void {
     this.registrationForm = this.fb.group({
       firstName: ['', Validators.required],
       lastName: ['', Validators.required],
@@ -46,14 +52,23 @@ export class Register implements OnInit {
   }
 
   onSubmit(): void {
-    if (this.registrationForm.invalid) return;
+    if (this.registrationForm.invalid) {
+      this.alert.error('Please fill all required fields correctly.');
+      return;
+    }
 
     const formData = this.registrationForm.value;
 
     this.authService.register(formData).subscribe({
-      next: (res) => this.router.navigate(['/login']),
-      error: (err) =>
-        (this.message = err.error.message || 'Registration failed'),
+      next: () => {
+        this.alert.success('Registration successful!');
+        this.router.navigate(['/login']);
+      },
+      error: (err) => {
+        const message =
+          err?.error?.message || 'Registration failed. Please try again.';
+        this.alert.error(message);
+      },
     });
   }
 }

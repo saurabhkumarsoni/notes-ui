@@ -1,12 +1,10 @@
 import {
-  AfterViewInit,
-  ChangeDetectionStrategy,
-  ChangeDetectorRef,
   Component,
-  computed,
-  NgZone,
   OnInit,
   signal,
+  computed,
+  ChangeDetectorRef,
+  NgZone,
 } from '@angular/core';
 import {
   FormBuilder,
@@ -15,7 +13,6 @@ import {
   Validators,
   ReactiveFormsModule,
   FormsModule,
-  AbstractControl,
 } from '@angular/forms';
 import { CommonModule } from '@angular/common';
 import { MatDialog, MatDialogModule } from '@angular/material/dialog';
@@ -25,10 +22,12 @@ import { materialImports } from '../material';
 import { CustomDropdownComponent } from '../shared/custom-dropdown/custom-dropdown';
 import { CustomDatepickerComponent } from '../shared/custom-datepicker/custom-datepicker';
 import { CustomAutocompleteComponent } from '../shared/custom-autocomplete/custom-autocomplete';
+
 import { UserService } from '../services/user.service';
 import { AuthService } from '../services/auth.service';
 import { StaticDataService } from '../services/static-data.service';
 import { UserStoreService } from '../services/user-store.service';
+import { AlertService } from '../shared/alert.service';
 
 @Component({
   selector: 'app-profile',
@@ -48,7 +47,15 @@ import { UserStoreService } from '../services/user-store.service';
 })
 export class ProfileComponent implements OnInit {
   profileForm!: FormGroup;
+
+  // reactive signals
   croppedImage = signal<string | null>(null);
+  userImageUrl = signal<string | null>(null);
+  readonly profileImage = computed(
+    () => this.croppedImage() || this.userImageUrl() || this.defaultAvatar
+  );
+
+  // dropdown data
   positions: string[] = [];
   departments: string[] = [];
   degrees: { name: string }[] = [];
@@ -56,110 +63,34 @@ export class ProfileComponent implements OnInit {
   managers: any[] = [];
 
   defaultAvatar = 'https://www.gravatar.com/avatar/?d=mp';
-  userImageUrl = signal<string | null>(null);
 
   constructor(
     private fb: FormBuilder,
     private userService: UserService,
     private authService: AuthService,
     private staticDataService: StaticDataService,
+    private userStore: UserStoreService,
     private dialog: MatDialog,
-    private cdRef: ChangeDetectorRef,
-    private ngZone: NgZone,
-    private userStore: UserStoreService // ✅ FIX HERE
+    private alertService: AlertService,
+    private cdr: ChangeDetectorRef,
+    private ngZone: NgZone
   ) {}
 
   ngOnInit(): void {
     this.buildForm();
-
-    const userId = this.authService.getUser()?.id;
-    if (userId) {
-      this.userService.getUserById(userId).subscribe((user) => {
-        this.profileForm.patchValue(user);
-
-        // this.userImageUrl = user.profileImage;
-        this.userImageUrl.set(user.profileImage);
-
-        this.setFormArray('skills', user.skills || [], (skill) =>
-          this.fb.control(skill)
-        );
-        this.cdRef.detectChanges();
-      });
-    }
-
     this.loadStaticData();
+    this.loadUserProfile();
   }
+
+  // -----------------------
+  // Form & Field Helpers
+  // -----------------------
 
   get skills(): FormArray {
     return this.profileForm.get('skills') as FormArray;
   }
 
-  // Methods to add/remove dynamic fields
-  addSkill() {
-    this.skills.push(this.fb.control(''));
-  }
-
-  removeSkill(index: number) {
-    this.skills.removeAt(index);
-  }
-
-  onSubmit() {
-    if (this.profileForm.valid) {
-      const userId = this.authService.getUser()?.id;
-
-      this.userService.updateUser(userId, this.profileForm.value).subscribe({
-        next: (res) => {
-          console.log('✅ Profile updated successfully', res);
-        },
-        error: (err) => {
-          console.error('❌ Failed to update profile', err);
-        },
-      });
-    }
-  }
-
-  openImageCropDialog(file: File) {
-    const dialogRef = this.dialog.open(ImageCropComponent, {
-      data: { file } /* … */,
-    });
-
-    dialogRef
-      .afterClosed()
-      .subscribe((result: { file: File; objectUrl: string } | null) => {
-        if (!result) return; // cancelled
-
-        console.log('🗂 cropped file:', result.file);
-        console.log('🖼 preview URL:', result.objectUrl);
-
-        const userId = this.authService.getUser()!.id;
-        this.userService.uploadProfileImage(userId, result.file).subscribe({
-          next: (res) => {
-            console.log('🚀 upload response:', res);
-            this.ngZone.run(() => {
-              this.croppedImage.set(res.profileImage);
-              this.profileForm.patchValue({ profileImage: res.profileImage });
-              this.userStore.setProfileImage(res.profileImage);
-              this.cdRef.markForCheck();
-            });
-          },
-          error: (err) => console.error('❌ upload failed', err),
-        });
-      });
-  }
-
-  onFileChange(event: Event): void {
-    const input = event.target as HTMLInputElement;
-    const file = input.files?.[0];
-    if (file) {
-      this.openImageCropDialog(file);
-    }
-  }
-
-  readonly profileImage = computed(
-    () => this.croppedImage() || this.userImageUrl() || this.defaultAvatar
-  );
-
-  buildForm() {
+  buildForm(): void {
     this.profileForm = this.fb.group({
       profileImage: [''],
       firstName: [''],
@@ -177,7 +108,6 @@ export class ProfileComponent implements OnInit {
       isMarried: [false],
       linkedin: [''],
       github: [''],
-
       address: this.fb.group({
         street: [''],
         city: [''],
@@ -185,15 +115,40 @@ export class ProfileComponent implements OnInit {
         zip: [''],
         country: [''],
       }),
-
       skills: this.fb.array([]),
     });
   }
 
-  setFormArray(controlName: string, values: any[], builder: (val: any) => any) {
-    const array = this.profileForm.get(controlName) as FormArray;
-    array.clear();
-    values?.forEach((val) => array.push(builder(val)));
+  setFormArray<T>(key: string, items: T[], builder: (item: T) => any): void {
+    const formArray = this.profileForm.get(key) as FormArray;
+    formArray.clear();
+    items.forEach((item) => formArray.push(builder(item)));
+  }
+
+  addSkill(): void {
+    this.skills.push(this.fb.control(''));
+  }
+
+  removeSkill(index: number): void {
+    this.skills.removeAt(index);
+  }
+
+  // -----------------------
+  // API Calls
+  // -----------------------
+
+  loadUserProfile(): void {
+    const userId = this.authService.getUser()?.id;
+    if (!userId) return;
+
+    this.userService.getUserById(userId).subscribe((user) => {
+      this.profileForm.patchValue(user);
+      this.userImageUrl.set(user.profileImage);
+      this.setFormArray('skills', user.skills || [], (skill) =>
+        this.fb.control(skill)
+      );
+      this.cdr.detectChanges();
+    });
   }
 
   loadStaticData(): void {
@@ -212,5 +167,56 @@ export class ProfileComponent implements OnInit {
     this.staticDataService
       .getManagers()
       .subscribe((data) => (this.managers = data));
+  }
+
+  onSubmit(): void {
+    if (this.profileForm.invalid) return;
+
+    const userId = this.authService.getUser()?.id;
+    if (!userId) return;
+
+    this.userService.updateUser(userId, this.profileForm.value).subscribe({
+      next: () => this.alertService.success('Profile updated successfully'),
+      error: () => this.alertService.error('Failed to update profile'),
+    });
+  }
+
+  // -----------------------
+  // Image Upload
+  // -----------------------
+
+  onFileChange(event: Event): void {
+    const input = event.target as HTMLInputElement;
+    const file = input?.files?.[0];
+    if (file) this.openImageCropDialog(file);
+  }
+
+  openImageCropDialog(file: File): void {
+    const dialogRef = this.dialog.open(ImageCropComponent, { data: { file } });
+
+    dialogRef
+      .afterClosed()
+      .subscribe((result: { file: File; objectUrl: string } | null) => {
+        if (!result) return;
+
+        const userId = this.authService.getUser()?.id;
+        if (!userId) return;
+
+        this.userService.uploadProfileImage(userId, result.file).subscribe({
+          next: (res) => {
+            this.ngZone.run(() => {
+              this.croppedImage.set(res.profileImage);
+              this.profileForm.patchValue({ profileImage: res.profileImage });
+              this.userStore.setProfileImage(res.profileImage);
+              this.cdr.markForCheck();
+              this.alertService.success(
+                'Profile image updated successfully ✅'
+              );
+            });
+          },
+          error: () =>
+            this.alertService.error('Failed to upload profile image ❌'),
+        });
+      });
   }
 }

@@ -1,3 +1,4 @@
+import { AlertService } from './../../shared/alert.service';
 import {
   Component,
   OnInit,
@@ -50,7 +51,8 @@ export class Notes implements OnInit, AfterViewChecked {
     private noteService: NoteService,
     private fb: FormBuilder,
     private cdr: ChangeDetectorRef,
-    private zone: NgZone
+    private zone: NgZone,
+    private alertService: AlertService
   ) {}
 
   ngOnInit(): void {
@@ -84,38 +86,38 @@ export class Notes implements OnInit, AfterViewChecked {
         });
       });
 
-    this.getAllNotes(); // load initial notes
+    this.getAllNotes();
   }
 
   getAllNotes(): void {
-    if (this.isSearching && this.searchTerm.trim()) {
-      this.noteService
-        .searchNotes(
-          this.searchTerm.trim(),
-          this.currentPage,
-          this.limit,
-          this.sortBy,
-          this.sortOrder
-        )
-        .subscribe((response) => {
-          console.log('response of notes list', response);
-          this.zone.run(() => {
-            this.notes = [...response.notes];
-            this.totalPages = response.totalPages;
-            this.cdr.markForCheck();
-          });
+    const source$ =
+      this.isSearching && this.searchTerm.trim()
+        ? this.noteService.searchNotes(
+            this.searchTerm.trim(),
+            this.currentPage,
+            this.limit,
+            this.sortBy,
+            this.sortOrder
+          )
+        : this.noteService.getNotes(
+            this.currentPage,
+            this.limit,
+            this.sortBy,
+            this.sortOrder
+          );
+
+    source$.subscribe({
+      next: (response) => {
+        this.zone.run(() => {
+          this.notes = [...response.notes];
+          this.totalPages = response.totalPages;
+          this.cdr.markForCheck();
         });
-    } else {
-      this.noteService
-        .getNotes(this.currentPage, this.limit, this.sortBy, this.sortOrder)
-        .subscribe((response) => {
-          this.zone.run(() => {
-            this.notes = [...response.notes];
-            this.totalPages = response.totalPages;
-            this.cdr.markForCheck();
-          });
-        });
-    }
+      },
+      error: () => {
+        this.alertService.error('Failed to load notes');
+      },
+    });
   }
 
   onSubmit(): void {
@@ -124,16 +126,22 @@ export class Notes implements OnInit, AfterViewChecked {
     const note = this.noteForm.value;
 
     if (this.editingNoteId) {
-      this.noteService.updateNote(this.editingNoteId, note).subscribe(() => {
-        this.getAllNotes();
-        this.cancelEdit();
+      this.noteService.updateNote(this.editingNoteId, note).subscribe({
+        next: () => {
+          this.alertService.success('Note updated successfully');
+          this.getAllNotes();
+          this.cancelEdit();
+        },
+        error: () => this.alertService.error('Failed to update note'),
       });
     } else {
-      this.noteService.addNote(note).subscribe(() => {
-        this.zone.run(() => {
+      this.noteService.addNote(note).subscribe({
+        next: () => {
+          this.alertService.success('Note created successfully');
           this.getAllNotes();
           this.noteForm.reset();
-        });
+        },
+        error: () => this.alertService.error('Failed to create note'),
       });
     }
   }
@@ -150,22 +158,29 @@ export class Notes implements OnInit, AfterViewChecked {
   }
 
   onDelete(id: string): void {
-    const confirmDelete = confirm('Are you sure you want to delete this note?');
-    if (confirmDelete) {
-      this.noteService.deleteNote(id).subscribe(() => this.getAllNotes());
-    }
+    this.alertService
+      .confirm('Do you really want to delete this note?')
+      .then((result) => {
+        if (result.isConfirmed) {
+          this.noteService.deleteNote(id).subscribe({
+            next: () => {
+              this.alertService.success('Note deleted successfully');
+              this.getAllNotes();
+            },
+            error: () => this.alertService.error('Failed to delete note'),
+          });
+        }
+      });
   }
 
   trackByNoteId(index: number, note: Note): string {
     return note._id ?? note.id ?? '';
   }
 
-  // search
   onSearch(): void {
     this.searchInput$.next(this.searchTerm);
   }
 
-  // pagination
   changePage(page: number): void {
     if (page >= 1 && page <= this.totalPages) {
       this.currentPage = page;
@@ -174,12 +189,12 @@ export class Notes implements OnInit, AfterViewChecked {
   }
 
   onSortChange(): void {
-    this.currentPage = 1; // Reset to first page
+    this.currentPage = 1;
     this.getAllNotes();
   }
 
   getNoteId(note: Note): string {
-    return note._id ?? note.id ?? ''; // fallback to empty if none
+    return note._id ?? note.id ?? '';
   }
 
   ngAfterViewChecked(): void {
