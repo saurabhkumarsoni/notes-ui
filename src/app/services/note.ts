@@ -33,7 +33,7 @@ export class NoteService {
   }
 
   updateNote(id: string, note: Note): Observable<Note> {
-    console.log(id);
+    console.log(note);
 
     return this.http.put<Note>(`${this.apiUrl}/${id}`, note);
   }

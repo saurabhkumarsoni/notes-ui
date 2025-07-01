@@ -4,7 +4,14 @@ export interface Note {
   name: string;
   content: string;
   quoteId?: string;
+  tags: { name: string }[];
+  categoryId: null;
   userId?: string;
   createdAt?: Date;
   updatedAt?: Date;
+}
+
+interface Category {
+  id: number;
+  name: string;
 }

@@ -6,9 +6,10 @@ import { MatOptionModule } from '@angular/material/core';
 import { MatIconModule } from '@angular/material/icon';
 import { MatCheckboxModule } from '@angular/material/checkbox';
 import { MatDialogModule } from '@angular/material/dialog';
-
+import { MatChipsModule } from '@angular/material/chips';
 import { MatDatepickerModule } from '@angular/material/datepicker';
-import { MatNativeDateModule } from '@angular/material/core'; // For native JS Date
+import { MatNativeDateModule } from '@angular/material/core';
+import { MatAutocompleteModule } from '@angular/material/autocomplete';
 
 export const materialImports = [
   MatFormFieldModule,
@@ -21,4 +22,6 @@ export const materialImports = [
   MatDialogModule,
   MatDatepickerModule,
   MatNativeDateModule,
+  MatChipsModule,
+  MatAutocompleteModule,
 ];

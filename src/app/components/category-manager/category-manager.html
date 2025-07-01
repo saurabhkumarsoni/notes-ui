@@ -1,0 +1,24 @@
+<!-- src/app/components/category-manager.component.html -->
+<div class="max-w-xl mx-auto mt-10 p-6 bg-white shadow rounded">
+  <h2 class="text-xl font-bold mb-4">Manage Categories</h2>
+
+  <form [formGroup]="categoryForm" (ngSubmit)="saveCategory()" class="flex gap-2 mb-6">
+    <input type="text" formControlName="name" placeholder="Enter category" class="border px-3 py-2 rounded flex-grow" />
+    <button type="submit" class="bg-blue-600 text-white px-4 rounded">
+      {{ editingCategory() ? 'Update' : 'Create' }}
+    </button>
+    <button *ngIf="editingCategory()" type="button" (click)="cancelEdit()" class="bg-gray-400 text-white px-4 rounded">
+      Cancel
+    </button>
+  </form>
+
+  <ul class="space-y-2">
+    <li *ngFor="let category of categories()" class="flex justify-between items-center border p-2 rounded">
+      <span>{{ category.name }}</span>
+      <div class="flex gap-2">
+        <button (click)="editCategory(category)" class="text-yellow-500 font-medium">Edit</button>
+        <button (click)="deleteCategory(category)" class="text-red-500 font-medium">Delete</button>
+      </div>
+    </li>
+  </ul>
+</div>

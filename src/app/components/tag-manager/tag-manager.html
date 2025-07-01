@@ -1,0 +1,25 @@
+<!-- tag-manager.html -->
+<div class="max-w-xl mx-auto mt-10 p-6 bg-white shadow rounded">
+  <h2 class="text-xl font-bold mb-4">Manage Tags</h2>
+
+  <form [formGroup]="tagForm" (ngSubmit)="saveTag()" class="flex gap-2 mb-6">
+    <input type="text" formControlName="name" placeholder="Enter tag name" class="border px-3 py-2 rounded flex-grow" />
+    <button type="submit" class="bg-blue-600 text-white px-4 rounded">
+      {{ editingTag() ? 'Update' : 'Create' }}
+    </button>
+    <button type="button" *ngIf="editingTag()" (click)="cancelEdit()" class="bg-gray-400 text-white px-4 rounded">
+      Cancel
+    </button>
+  </form>
+
+  <ul class="space-y-2">
+    <li *ngFor="let tag of tags()" class="flex justify-between items-center border p-2 rounded">
+      <span>{{ tag.name }}</span>
+      <div class="flex gap-2">
+        <button (click)="editTag(tag)" class="text-yellow-500 font-medium">Edit</button>
+        <button (click)="deleteTag(tag)" class="text-red-500 font-medium">Delete</button>
+      </div>
+    </li>
+  </ul>
+
+</div>

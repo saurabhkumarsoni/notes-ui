@@ -4,14 +4,42 @@
     {{ editingNoteId ? 'Edit Note' : 'Add a New Note' }}
   </h2>
   <form [formGroup]="noteForm" (ngSubmit)="onSubmit()" class="space-y-4">
-    <!-- <input type="text" formControlName="name" placeholder="Note Title"
-      class="w-full px-4 mb-2 py-2 border rounded focus:outline-none focus:ring-2 focus:ring-blue-500 gap-2" /> -->
     <input #noteTitleInput type="text" formControlName="name" placeholder="Note Title"
       class="w-full px-4 mb-2 py-2 border rounded focus:outline-none focus:ring-2 focus:ring-blue-500 gap-2" />
+
     <textarea formControlName="content" placeholder="Note Content"
       class="w-full px-4 py-2 border rounded resize-none h-28 focus:outline-none focus:ring-2 focus:ring-blue-500 mt-6"></textarea>
 
-    <!-- Add top margin to this div to create a gap -->
+    <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+      <!-- Tags Field -->
+      <mat-form-field class="w-full">
+        <mat-label>Tags</mat-label>
+        <mat-chip-grid #chipGrid aria-label="Tag selection">
+          <mat-chip *ngFor="let tagCtrl of tags.controls; let i = index" [removable]="true" (removed)="removeTag(i)">
+            {{ tagCtrl.value }}
+            <mat-icon matChipRemove>cancel</mat-icon>
+          </mat-chip>
+          <input [formControl]="currentTagControl" [matChipInputFor]="chipGrid" [matAutocomplete]="auto"
+            [matChipInputSeparatorKeyCodes]="separatorKeysCodes" (matChipInputTokenEnd)="addTag($event)" />
+        </mat-chip-grid>
+
+        <mat-autocomplete #auto="matAutocomplete" (optionSelected)="selectedTag($event)">
+          <mat-option *ngFor="let tag of filteredTags(); trackBy: trackTag" [value]="tag">
+            {{ tag }}
+          </mat-option>
+        </mat-autocomplete>
+      </mat-form-field>
+
+      <!-- Category Dropdown -->
+      <div>
+        <label for="categoryId" class="block text-sm font-medium text-gray-700 mb-1">Category</label>
+        <select id="categoryId" formControlName="categoryId" class="border px-3 py-2 rounded w-full">
+          <option [ngValue]="null">-- Select Category --</option>
+          <option *ngFor="let cat of categories()" [ngValue]="cat.id">{{ cat.name }}</option>
+        </select>
+      </div>
+    </div>
+
     <div class="mt-6 flex gap-2">
       <button type="submit" [disabled]="noteForm.invalid"
         class="bg-blue-600 text-white px-4 py-2 rounded hover:bg-blue-700 disabled:opacity-50">
@@ -23,46 +51,11 @@
       </button>
     </div>
   </form>
-
 </div>
-
-<!-- Search Bar -->
-<div class="max-w-6xl mx-auto mt-6 px-4 flex justify-end">
-  <div class="flex items-center gap-2 border border-gray-300 rounded px-2 py-1 bg-white shadow-sm w-fit">
-    <input type="text" [(ngModel)]="searchTerm" (ngModelChange)="onSearch()" placeholder="🔍 Search..."
-      class="text-sm px-2 py-1 border-none focus:outline-none focus:ring-0 w-40" />
-
-    <button (click)="onSearch()" class="bg-blue-600 text-white text-sm px-3 py-1 rounded hover:bg-blue-700 transition">
-      Search
-    </button>
-  </div>
-</div>
-
-
-<!-- Sorting Controls -->
-<div class="max-w-6xl mx-auto mt-4 px-4 flex justify-end gap-4 items-center">
-  <div>
-    <label class="text-sm text-gray-600 mr-1">Sort By:</label>
-    <select [(ngModel)]="sortBy" (change)="onSortChange()" class="border px-2 py-1 rounded text-sm bg-white">
-      <option value="createdAt">Created Date</option>
-      <option value="updatedAt">Updated Date</option>
-      <option value="name">Name</option>
-    </select>
-  </div>
-  <div>
-    <label class="text-sm text-gray-600 mr-1">Order:</label>
-    <select [(ngModel)]="sortOrder" (change)="onSortChange()" class="border px-2 py-1 rounded text-sm bg-white">
-      <option value="desc">Descending</option>
-      <option value="asc">Ascending</option>
-    </select>
-  </div>
-</div>
-
 
 <!-- Notes List Section -->
 <div class="max-w-6xl mx-auto mt-12 px-4">
   <h3 class="text-2xl font-extrabold text-blue-800 mb-6 text-center">📒 Your Notes</h3>
-
   <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
     <div *ngFor="let note of notes; trackBy: trackByNoteId"
       class="bg-white p-5 rounded-xl shadow-md border border-gray-200 hover:shadow-lg transition-transform duration-200 transform hover:-translate-y-1">
@@ -71,6 +64,15 @@
           <h4 class="text-lg font-bold text-gray-800 mb-2">{{ note.name }}</h4>
           <p class="text-gray-600 mb-4">{{ note.content }}</p>
         </div>
+
+        <div *ngIf="note.tags?.length" class="flex flex-wrap gap-2 mb-3">
+          <span *ngFor="let tag of note.tags"
+            class="bg-blue-100 text-blue-700 px-2 py-1 rounded-full text-xs font-semibold">
+            {{ tag.name }}
+          </span>
+        </div>
+
+        <p><strong>Category:</strong> {{ note.category?.name || 'Uncategorized' }}</p>
 
         <div class="text-sm text-gray-400 mb-3">
           Created: {{ note.createdAt | date:'short' }}<br />
@@ -98,7 +100,6 @@
     class="px-3 py-1 bg-gray-300 rounded hover:bg-gray-400 disabled:opacity-50">
     ◀ Prev
   </button>
-
   <ng-container *ngFor="let page of [].constructor(totalPages); let i = index">
     <button (click)="changePage(i + 1)"
       [ngClass]="{'bg-blue-600 text-white': currentPage === i + 1, 'bg-white text-blue-600': currentPage !== i + 1}"
@@ -106,14 +107,11 @@
       {{ i + 1 }}
     </button>
   </ng-container>
-
   <button (click)="changePage(currentPage + 1)" [disabled]="currentPage === totalPages"
     class="px-3 py-1 bg-gray-300 rounded hover:bg-gray-400 disabled:opacity-50">
     Next ▶
   </button>
 </div>
-
-
 
 <!-- Search Result Status -->
 <div class="max-w-6xl mx-auto mt-4 px-4 text-center">

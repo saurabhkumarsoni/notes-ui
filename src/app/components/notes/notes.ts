@@ -1,69 +1,121 @@
-import { AlertService } from './../../shared/alert.service';
 import {
   Component,
   OnInit,
+  ViewChild,
+  ElementRef,
   ChangeDetectorRef,
   NgZone,
   AfterViewChecked,
-  ElementRef,
-  ViewChild,
+  computed,
+  signal,
+  model,
 } from '@angular/core';
-import { NoteService } from '../../services/note';
-import { Note } from '../../models/note.model';
 import {
   FormBuilder,
   FormGroup,
-  ReactiveFormsModule,
+  FormArray,
+  FormControl,
   Validators,
+  ReactiveFormsModule,
   FormsModule,
 } from '@angular/forms';
-import { HttpClientModule } from '@angular/common/http';
-import { CommonModule } from '@angular/common';
-import { Subject } from 'rxjs';
+import { COMMA, ENTER } from '@angular/cdk/keycodes';
+import { MatChipInputEvent, MatChipsModule } from '@angular/material/chips';
+import {
+  MatAutocomplete,
+  MatAutocompleteModule,
+  MatAutocompleteSelectedEvent,
+  MatOption,
+} from '@angular/material/autocomplete';
 import { debounceTime, distinctUntilChanged, switchMap } from 'rxjs/operators';
+import { Subject } from 'rxjs';
+
+import { NoteService } from '../../services/note';
+import { TagService } from '../../services/tag.service';
+import { CategoryService, Category } from '../../services/category.service';
+import { AlertService } from '../../shared/alert.service';
+import { Note } from '../../models/note.model';
+import { CommonModule, NgClass } from '@angular/common';
+import { HttpClientModule } from '@angular/common/http';
+import { MatFormFieldModule } from '@angular/material/form-field';
+import { MatInputModule } from '@angular/material/input';
+import { MatIconModule } from '@angular/material/icon';
 
 @Component({
   selector: 'app-notes',
-  imports: [CommonModule, ReactiveFormsModule, HttpClientModule, FormsModule],
-
-  templateUrl: './notes.html',
-  styleUrl: './notes.css',
   standalone: true,
+  templateUrl: './notes.html',
+  styleUrls: ['./notes.css'],
+  imports: [
+    CommonModule,
+    NgClass,
+    CommonModule,
+    ReactiveFormsModule,
+    FormsModule,
+    HttpClientModule,
+    MatFormFieldModule,
+    MatInputModule,
+    MatChipsModule,
+    MatIconModule,
+    MatAutocomplete,
+    MatOption,
+    MatAutocompleteModule,
+  ],
 })
 export class Notes implements OnInit, AfterViewChecked {
-  private searchInput$ = new Subject<string>();
+  readonly separatorKeysCodes: number[] = [ENTER, COMMA];
+  readonly allTags = signal<string[]>([]);
+  readonly categories = signal<Category[]>([]);
+  readonly tagInputControl = new FormControl('');
+  readonly filteredTags = computed(() => {
+    const input = this.tagInputControl.value?.toLowerCase() || '';
+    return this.allTags().filter(
+      (tag) =>
+        tag.toLowerCase().includes(input) && !this.tags.value.includes(tag)
+    );
+  });
 
+  private searchInput$ = new Subject<string>();
   @ViewChild('noteTitleInput') noteTitleInputRef!: ElementRef<HTMLInputElement>;
   private shouldFocusInput = false;
-  sortBy: string = 'createdAt';
-  sortOrder: string = 'desc';
-  isSearching: boolean = false;
-  currentPage: number = 1;
-  totalPages: number = 1;
-  limit: number = 6;
 
-  searchTerm: string = '';
-  notes: Note[] = [];
   noteForm!: FormGroup;
+  notes: Note[] = [];
+  searchTerm = '';
+  currentPage = 1;
+  totalPages = 1;
+  limit = 6;
+  sortBy = 'createdAt';
+  sortOrder = 'desc';
   editingNoteId: string | null = null;
+  isSearching = false;
+  currentTagControl!: FormControl;
 
   constructor(
-    private noteService: NoteService,
     private fb: FormBuilder,
-    private cdr: ChangeDetectorRef,
+    private noteService: NoteService,
+    private tagService: TagService,
+    private categoryService: CategoryService,
+    private alertService: AlertService,
     private zone: NgZone,
-    private alertService: AlertService
+    private cdr: ChangeDetectorRef
   ) {}
 
   ngOnInit(): void {
+    this.fetchTags();
+    this.fetchCategory();
+    this.currentTagControl = this.fb.control('');
+
     this.noteForm = this.fb.group({
       name: ['', Validators.required],
       content: ['', Validators.required],
+      tags: this.fb.array([]),
+      categoryId: [null],
     });
 
     this.searchInput$
       .pipe(
-        debounceTime(400),
+        debounceTime(300),
         distinctUntilChanged(),
         switchMap((term) => {
           this.searchTerm = term.trim();
@@ -80,7 +132,7 @@ export class Notes implements OnInit, AfterViewChecked {
       )
       .subscribe((response) => {
         this.zone.run(() => {
-          this.notes = [...response.notes];
+          this.notes = response.notes;
           this.totalPages = response.totalPages;
           this.cdr.markForCheck();
         });
@@ -89,11 +141,86 @@ export class Notes implements OnInit, AfterViewChecked {
     this.getAllNotes();
   }
 
+  get tags(): FormArray {
+    return this.noteForm.get('tags') as FormArray;
+  }
+
+  addTag(event: MatChipInputEvent): void {
+    const value = (event.value || '').trim();
+    if (value && !this.tags.value.includes(value)) {
+      this.tags.push(this.fb.control(value));
+    }
+    this.tagInputControl.setValue('');
+  }
+
+  removeTag(index: number): void {
+    if (index >= 0) this.tags.removeAt(index);
+  }
+
+  selectedTag(event: MatAutocompleteSelectedEvent): void {
+    const tag = event.option.viewValue;
+    if (tag && !this.tags.value.includes(tag)) {
+      this.tags.push(this.fb.control(tag));
+    }
+    this.tagInputControl.setValue('');
+  }
+
+  onSubmit(): void {
+    if (this.noteForm.invalid) return;
+
+    const formValue = this.noteForm.value;
+    const payload: Note = {
+      name: formValue.name,
+      content: formValue.content,
+      tags: formValue.tags.map((t: string) => ({ name: t })),
+      categoryId: formValue.categoryId,
+    };
+
+    const request$ = this.editingNoteId
+      ? this.noteService.updateNote(this.editingNoteId, payload)
+      : this.noteService.addNote(payload);
+
+    request$.subscribe({
+      next: () => {
+        this.alertService.success(
+          this.editingNoteId ? 'Note updated' : 'Note created'
+        );
+        this.getAllNotes();
+        this.cancelEdit();
+      },
+      error: () => {
+        this.alertService.error(
+          this.editingNoteId ? 'Update failed' : 'Creation failed'
+        );
+      },
+    });
+  }
+
+  cancelEdit(): void {
+    this.editingNoteId = null;
+    this.noteForm.reset();
+    this.tags.clear();
+  }
+
+  onEdit(note: Note): void {
+    this.noteForm.patchValue({
+      name: note.name,
+      content: note.content,
+      categoryId: note.categoryId || null,
+    });
+    this.tags.clear();
+    (note.tags || []).forEach((tag) => {
+      this.tags.push(this.fb.control(typeof tag === 'string' ? tag : tag.name));
+    });
+    this.editingNoteId = note._id ?? note.id ?? null;
+    this.shouldFocusInput = true;
+  }
+
   getAllNotes(): void {
     const source$ =
       this.isSearching && this.searchTerm.trim()
         ? this.noteService.searchNotes(
-            this.searchTerm.trim(),
+            this.searchTerm,
             this.currentPage,
             this.limit,
             this.sortBy,
@@ -109,52 +236,42 @@ export class Notes implements OnInit, AfterViewChecked {
     source$.subscribe({
       next: (response) => {
         this.zone.run(() => {
-          this.notes = [...response.notes];
+          this.notes = response.notes;
           this.totalPages = response.totalPages;
           this.cdr.markForCheck();
         });
       },
-      error: () => {
-        this.alertService.error('Failed to load notes');
-      },
+      error: () => this.alertService.error('Failed to load notes'),
     });
   }
 
-  onSubmit(): void {
-    if (this.noteForm.invalid) return;
+  fetchTags(): void {
+    this.tagService.getTags().subscribe({
+      next: (tags) => this.allTags.set(tags.map((t) => t.name)),
+      error: () => this.alertService.error('Failed to load tags'),
+    });
+  }
 
-    const note = this.noteForm.value;
+  fetchCategory(): void {
+    this.categoryService.getCategories().subscribe({
+      next: (cats) => this.categories.set(cats),
+      error: () => this.alertService.error('Failed to load categories'),
+    });
+  }
 
-    if (this.editingNoteId) {
-      this.noteService.updateNote(this.editingNoteId, note).subscribe({
-        next: () => {
-          this.alertService.success('Note updated successfully');
-          this.getAllNotes();
-          this.cancelEdit();
-        },
-        error: () => this.alertService.error('Failed to update note'),
-      });
-    } else {
-      this.noteService.addNote(note).subscribe({
-        next: () => {
-          this.alertService.success('Note created successfully');
-          this.getAllNotes();
-          this.noteForm.reset();
-        },
-        error: () => this.alertService.error('Failed to create note'),
-      });
+  ngAfterViewChecked(): void {
+    if (this.shouldFocusInput && this.noteTitleInputRef) {
+      this.noteTitleInputRef.nativeElement.focus();
+      this.shouldFocusInput = false;
     }
   }
 
-  onEdit(note: Note): void {
-    this.noteForm.patchValue(note);
-    this.editingNoteId = this.getNoteId(note);
-    this.shouldFocusInput = true;
+  trackTag(index: number, tag: string): string {
+    return tag;
   }
 
-  cancelEdit(): void {
-    this.editingNoteId = null;
-    this.noteForm.reset();
+  getNoteId(note: Note): string {
+    return note._id ?? note.id ?? '';
   }
 
   onDelete(id: string): void {
@@ -173,14 +290,6 @@ export class Notes implements OnInit, AfterViewChecked {
       });
   }
 
-  trackByNoteId(index: number, note: Note): string {
-    return note._id ?? note.id ?? '';
-  }
-
-  onSearch(): void {
-    this.searchInput$.next(this.searchTerm);
-  }
-
   changePage(page: number): void {
     if (page >= 1 && page <= this.totalPages) {
       this.currentPage = page;
@@ -188,19 +297,7 @@ export class Notes implements OnInit, AfterViewChecked {
     }
   }
 
-  onSortChange(): void {
-    this.currentPage = 1;
-    this.getAllNotes();
-  }
-
-  getNoteId(note: Note): string {
+  trackByNoteId(index: number, note: Note): string {
     return note._id ?? note.id ?? '';
-  }
-
-  ngAfterViewChecked(): void {
-    if (this.shouldFocusInput && this.noteTitleInputRef) {
-      this.noteTitleInputRef.nativeElement.focus();
-      this.shouldFocusInput = false;
-    }
   }
 }
