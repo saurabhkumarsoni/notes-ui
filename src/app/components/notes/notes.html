@@ -6,12 +6,9 @@
   <form [formGroup]="noteForm" (ngSubmit)="onSubmit()" class="space-y-4">
     <input #noteTitleInput type="text" formControlName="name" placeholder="Note Title"
       class="w-full px-4 mb-2 py-2 border rounded focus:outline-none focus:ring-2 focus:ring-blue-500 gap-2" />
-
     <textarea formControlName="content" placeholder="Note Content"
       class="w-full px-4 py-2 border rounded resize-none h-28 focus:outline-none focus:ring-2 focus:ring-blue-500 mt-6"></textarea>
-
     <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
-      <!-- Tags Field -->
       <mat-form-field class="w-full">
         <mat-label>Tags</mat-label>
         <mat-chip-grid #chipGrid aria-label="Tag selection">
@@ -30,14 +27,27 @@
         </mat-autocomplete>
       </mat-form-field>
 
-      <!-- Category Dropdown -->
-      <div>
-        <label for="categoryId" class="block text-sm font-medium text-gray-700 mb-1">Category</label>
-        <select id="categoryId" formControlName="categoryId" class="border px-3 py-2 rounded w-full">
-          <option [ngValue]="null">-- Select Category --</option>
-          <option *ngFor="let cat of categories()" [ngValue]="cat.id">{{ cat.name }}</option>
-        </select>
+      <div class="grid grid-cols-1 md:grid-cols-1 gap-4">
+        <mat-form-field appearance="fill">
+          <mat-label>Category</mat-label>
+          <mat-select formControlName="categoryId">
+            <mat-option *ngFor="let cat of categories()" [value]="cat.id">
+              {{ cat.name }}
+            </mat-option>
+          </mat-select>
+        </mat-form-field>
       </div>
+    </div>
+
+    <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+      <mat-form-field appearance="fill">
+        <mat-label>Priority</mat-label>
+        <mat-select formControlName="priority">
+          <mat-option *ngFor="let level of priorityLevels" [value]="level">
+            {{ level }}
+          </mat-option>
+        </mat-select>
+      </mat-form-field>
     </div>
 
     <div class="mt-6 flex gap-2">
@@ -53,12 +63,43 @@
   </form>
 </div>
 
+<div class="search-filter-card mb-8 p-4 grid grid-cols-12 items-center gap-4">
+  <!-- Search = col‑span‑12 on mobile, col‑span‑4 on md+; centered on small, left on md+ -->
+  <mat-form-field appearance="fill"
+    class="search-field col-span-6 md:col-span-8 justify-self-center md:justify-self-left">
+    <mat-icon matPrefix class="search-icon">search</mat-icon>
+    <input matInput #searchInput (input)="onSearch(searchInput.value)" placeholder="Search notes..."
+      class="search-input" />
+  </mat-form-field>
+
+  <!-- Toggles = col‑span‑12 on mobile, col‑span‑8 on md+; centered on small, right on md+ -->
+  <div class="col-span-12 md:col-span-4 flex justify-center md:justify-end">
+    <mat-button-toggle-group [(ngModel)]="filter" (change)="onFilterChange()" appearance="legacy" class="filter-group">
+      <mat-button-toggle value="all">All</mat-button-toggle>
+      <mat-button-toggle value="archived">
+        Archived
+        <span class="badge badge-indigo">{{ archiveCount() }}</span>
+      </mat-button-toggle>
+      <mat-button-toggle value="trashed">
+        Trashed
+        <span class="badge badge-red">{{ trashCount() }}</span>
+      </mat-button-toggle>
+    </mat-button-toggle-group>
+  </div>
+</div>
+
+
 <!-- Notes List Section -->
-<div class="max-w-6xl mx-auto mt-12 px-4">
+<div class="max-w-8xl mx-auto mt-12 px-4">
   <h3 class="text-2xl font-extrabold text-blue-800 mb-6 text-center">📒 Your Notes</h3>
-  <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
+  <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
     <div *ngFor="let note of notes; trackBy: trackByNoteId"
-      class="bg-white p-5 rounded-xl shadow-md border border-gray-200 hover:shadow-lg transition-transform duration-200 transform hover:-translate-y-1">
+      class="relative bg-white p-5 rounded-xl shadow-md border border-gray-200 hover:shadow-lg transition-transform duration-200 transform hover:-translate-y-1">
+      <span *ngIf="note.priority" class="position-absolute top-0 end-0 m-2 badge rounded-pill"
+        [ngClass]="getPriorityBadgeClass(note.priority)">
+        {{ note.priority }}
+      </span>
+
       <div class="flex flex-col justify-between h-full">
         <div>
           <h4 class="text-lg font-bold text-gray-800 mb-2">{{ note.name }}</h4>
@@ -75,20 +116,29 @@
         <p><strong>Category:</strong> {{ getCategoryName(note.categoryId) }}</p>
 
         <div class="text-sm text-gray-400 mb-3">
-          Created: {{ note.createdAt | date:'short' }}<br />
+          Created: {{ note.createdAt | date:'short' }}
+          <br />
           <span *ngIf="note.updatedAt">Updated: {{ note.updatedAt | date:'short' }}</span>
         </div>
 
-        <div class="flex justify-between">
-          <button (click)="onEdit(note)"
-            class="bg-yellow-400 text-white px-3 py-1 rounded hover:bg-yellow-500 text-sm font-medium transition">
-            ✏️ Edit
+        <!-- Inside each note card (UI button group) -->
+        <div class="flex justify-between mt-3">
+          <button *ngIf="!note.isArchived && !note.isTrashed" (click)="onArchive(note)"
+            class="bg-blue-200 text-blue-800 px-2 py-1 rounded hover:bg-blue-300 text-xs font-medium">
+            📦 Archive
           </button>
-          <button (click)="onDelete(getNoteId(note))"
-            class="bg-red-500 text-white px-3 py-1 rounded hover:bg-red-600 text-sm font-medium transition">
-            🗑️ Delete
+
+          <button *ngIf="!note.isTrashed" (click)="onTrash(note)"
+            class="bg-red-200 text-red-800 px-2 py-1 rounded hover:bg-red-300 text-xs font-medium">
+            🗑 Trash
+          </button>
+
+          <button *ngIf="note.isTrashed || note.isArchived" (click)="onRestore(note)"
+            class="bg-green-200 text-green-800 px-2 py-1 rounded hover:bg-green-300 text-xs font-medium">
+            🔄 Restore
           </button>
         </div>
+
       </div>
     </div>
   </div>

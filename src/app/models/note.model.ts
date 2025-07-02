@@ -9,6 +9,9 @@ export interface Note {
   userId?: string;
   createdAt?: Date;
   updatedAt?: Date;
+  priority: string;
+  isArchived?: boolean;
+  isTrashed?: boolean;
 }
 
 interface Category {

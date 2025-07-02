@@ -40,6 +40,8 @@ import { HttpClientModule } from '@angular/common/http';
 import { MatFormFieldModule } from '@angular/material/form-field';
 import { MatInputModule } from '@angular/material/input';
 import { MatIconModule } from '@angular/material/icon';
+import { MatSelectModule } from '@angular/material/select';
+import { MatButtonToggleModule } from '@angular/material/button-toggle';
 
 @Component({
   selector: 'app-notes',
@@ -60,6 +62,8 @@ import { MatIconModule } from '@angular/material/icon';
     MatAutocomplete,
     MatOption,
     MatAutocompleteModule,
+    MatSelectModule,
+    MatButtonToggleModule,
   ],
 })
 export class Notes implements OnInit, AfterViewChecked {
@@ -67,6 +71,9 @@ export class Notes implements OnInit, AfterViewChecked {
   readonly allTags = signal<string[]>([]);
   readonly categories = signal<Category[]>([]);
   readonly tagInputControl = new FormControl('');
+  readonly priority = new FormControl('');
+  priorityLevels = ['Low', 'Medium', 'High', 'Urgent'];
+
   readonly filteredTags = computed(() => {
     const input = this.tagInputControl.value?.toLowerCase() || '';
     return this.allTags().filter(
@@ -90,6 +97,9 @@ export class Notes implements OnInit, AfterViewChecked {
   editingNoteId: string | null = null;
   isSearching = false;
   currentTagControl!: FormControl;
+  filter: 'all' | 'archived' | 'trashed' = 'all';
+  trashCount = signal<number>(0);
+  archiveCount = signal<number>(0);
 
   constructor(
     private fb: FormBuilder,
@@ -111,6 +121,7 @@ export class Notes implements OnInit, AfterViewChecked {
       content: ['', Validators.required],
       tags: this.fb.array([]),
       categoryId: [null],
+      priority: ['', Validators.required],
     });
 
     this.searchInput$
@@ -139,6 +150,16 @@ export class Notes implements OnInit, AfterViewChecked {
       });
 
     this.getAllNotes();
+    this.loadNoteCounts();
+  }
+
+  loadNoteCounts() {
+    this.noteService
+      .getNoteCount('trashed')
+      .subscribe((count) => this.trashCount.set(count));
+    this.noteService
+      .getNoteCount('archived')
+      .subscribe((count) => this.archiveCount.set(count));
   }
 
   get tags(): FormArray {
@@ -174,6 +195,7 @@ export class Notes implements OnInit, AfterViewChecked {
       content: formValue.content,
       tags: formValue.tags.map((t: string) => ({ name: t })),
       categoryId: formValue.categoryId,
+      priority: formValue.priority,
     };
 
     const request$ = this.editingNoteId
@@ -207,6 +229,7 @@ export class Notes implements OnInit, AfterViewChecked {
       name: note.name,
       content: note.content,
       categoryId: note.categoryId || null,
+      priority: note.priority || 'Medium',
     });
     this.tags.clear();
     (note.tags || []).forEach((tag) => {
@@ -224,13 +247,15 @@ export class Notes implements OnInit, AfterViewChecked {
             this.currentPage,
             this.limit,
             this.sortBy,
-            this.sortOrder
+            this.sortOrder,
+            this.filter
           )
         : this.noteService.getNotes(
             this.currentPage,
             this.limit,
             this.sortBy,
-            this.sortOrder
+            this.sortOrder,
+            this.filter
           );
 
     source$.subscribe({
@@ -304,5 +329,53 @@ export class Notes implements OnInit, AfterViewChecked {
   getCategoryName(categoryId: number | null | undefined): string {
     const cat = this.categories().find((c) => c.id === categoryId);
     return cat?.name ?? 'Uncategorized';
+  }
+
+  getPriorityBadgeClass(priority: string): string {
+    switch (priority) {
+      case 'Low':
+        return 'bg-success text-white';
+      case 'Medium':
+        return 'bg-primary text-white';
+      case 'High':
+        return 'bg-warning text-dark';
+      case 'Urgent':
+        return 'bg-danger text-white';
+      default:
+        return 'bg-secondary text-white';
+    }
+  }
+
+  onArchive(note: Note) {
+    const id = this.getNoteId(note);
+    this.noteService.archiveNote(id).subscribe(() => {
+      this.getAllNotes();
+      this.loadNoteCounts();
+    });
+  }
+
+  onTrash(note: Note) {
+    const id = this.getNoteId(note);
+    this.noteService.trashNote(id).subscribe(() => this.getAllNotes());
+  }
+
+  onRestore(note: Note) {
+    const id = this.getNoteId(note);
+    this.noteService.restoreNote(id).subscribe(() => this.getAllNotes());
+  }
+
+  setFilter(status: 'all' | 'archived' | 'trashed') {
+    this.filter = status;
+    this.currentPage = 1;
+    this.getAllNotes();
+  }
+
+  onFilterChange(): void {
+    this.currentPage = 1;
+    this.getAllNotes();
+  }
+
+  onSearch(term: string): void {
+    this.searchInput$.next(term);
   }
 }

@@ -7,3 +7,41 @@
   margin: 0 4px 4px 0;
   font-size: 12px;
 }
+
+.mat-chip {
+  position: absolute;
+}
+
+
+/* Count badges */
+.badge {
+  display: inline-block;
+  margin-left: 0.25rem;
+  padding: 0.1rem 0.4rem;
+  font-size: 0.75rem;
+  font-weight: 600;
+  border-radius: 9999px;
+  vertical-align: middle;
+}
+
+.badge-indigo {
+  background: #e0e7ff;
+  color: #4338ca;
+}
+
+.badge-red {
+  background: #fee2e2;
+  color: #b91c1c;
+}
+
+/* Responsive: stack on small screens */
+@media (max-width: 640px) {
+  .search-filter-card {
+    flex-direction: column !important;
+    align-items: stretch !important;
+  }
+
+  .filter-group {
+    justify-content: center !important;
+  }
+}

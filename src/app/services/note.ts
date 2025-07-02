@@ -1,7 +1,7 @@
 import { Injectable } from '@angular/core';
 import { HttpClient } from '@angular/common/http';
 import { Note } from '../models/note.model';
-import { Observable } from 'rxjs';
+import { map, Observable } from 'rxjs';
 import { HttpParams } from '@angular/common/http';
 
 @Injectable({
@@ -12,15 +12,48 @@ export class NoteService {
   private apiUrl = 'http://localhost:3000/api/notes';
 
   constructor(private http: HttpClient) {}
-
   getNotes(
-    page: number = 1,
-    limit: number = 6,
-    sortBy: string = 'createdAt',
-    order: string = 'desc'
-  ): Observable<{ notes: Note[]; totalPages: number }> {
+    page: number,
+    limit: number,
+    sortBy: string,
+    sortOrder: string,
+    filter: 'all' | 'archived' | 'trashed' = 'all',
+    search = ''
+  ) {
+    const params: any = {
+      page,
+      limit,
+      sortBy,
+      order: sortOrder.toUpperCase(),
+      ...(filter && { filter }),
+      ...(search && { search }),
+    };
+
+    return this.http.get<{ notes: Note[]; totalPages: number }>(this.apiUrl, {
+      params,
+    });
+  }
+
+  searchNotes(
+    search: string,
+    page: number,
+    limit: number,
+    sortBy: string,
+    sortOrder: string,
+    filter: 'all' | 'archived' | 'trashed' = 'all'
+  ) {
+    const params = {
+      search,
+      page,
+      limit,
+      sortBy,
+      order: sortOrder.toUpperCase(),
+      filter,
+    };
+
     return this.http.get<{ notes: Note[]; totalPages: number }>(
-      `${this.apiUrl}?page=${page}&limit=${limit}&sortBy=${sortBy}&order=${order}`
+      `${this.apiUrl}/search`,
+      { params }
     );
   }
 
@@ -43,23 +76,24 @@ export class NoteService {
     return this.http.delete(`${this.apiUrl}/${id}`);
   }
 
-  searchNotes(
-    search: string,
-    page: number = 1,
-    limit: number = 6,
-    sortBy: string = 'createdAt',
-    order: string = 'desc'
-  ): Observable<{ notes: Note[]; totalPages: number }> {
-    const params = new HttpParams()
-      .set('search', search)
-      .set('page', page.toString())
-      .set('limit', limit.toString())
-      .set('sortBy', sortBy)
-      .set('order', order);
+  // Archive a note
+  archiveNote(id: string): Observable<Note> {
+    return this.http.patch<Note>(`${this.apiUrl}/${id}/archive`, {});
+  }
 
-    return this.http.get<{ notes: Note[]; totalPages: number }>(
-      `${this.apiUrl}/search`,
-      { params }
-    );
+  // Move note to trash
+  trashNote(id: string): Observable<Note> {
+    return this.http.patch<Note>(`${this.apiUrl}/${id}/trash`, {});
+  }
+
+  // Restore a note (from archive or trash)
+  restoreNote(id: string): Observable<Note> {
+    return this.http.patch<Note>(`${this.apiUrl}/${id}/restore`, {});
+  }
+
+  getNoteCount(filter: 'trashed' | 'archived' | 'all'): Observable<number> {
+    return this.http
+      .get<{ count: number }>(`${this.apiUrl}/count?filter=${filter}`)
+      .pipe(map((response) => response.count));
   }
 }
