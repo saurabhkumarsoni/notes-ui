@@ -1,7 +1,12 @@
 // src/app/components/category-manager.component.ts
 import { Component, OnInit, signal, computed } from '@angular/core';
 import { CategoryService, Category } from '../../services/category.service';
-import { FormBuilder, FormGroup, ReactiveFormsModule, Validators } from '@angular/forms';
+import {
+  FormBuilder,
+  FormGroup,
+  ReactiveFormsModule,
+  Validators,
+} from '@angular/forms';
 import { CommonModule } from '@angular/common';
 
 @Component({
@@ -15,7 +20,10 @@ export class CategoryManager implements OnInit {
   categories = signal<Category[]>([]);
   editingCategory = signal<Category | null>(null);
 
-  constructor(private fb: FormBuilder, private categoryService: CategoryService) {}
+  constructor(
+    private fb: FormBuilder,
+    private categoryService: CategoryService
+  ) {}
 
   ngOnInit(): void {
     this.categoryForm = this.fb.group({
@@ -26,7 +34,10 @@ export class CategoryManager implements OnInit {
   }
 
   loadCategories() {
-    this.categoryService.getCategories().subscribe((data) => this.categories.set(data));
+    this.categoryService.getCategories().subscribe({
+      next: (data) => this.categories.set(data),
+      error: (err) => console.error('Error loading categories:', err),
+    });
   }
 
   saveCategory() {
@@ -38,9 +49,12 @@ export class CategoryManager implements OnInit {
       ? this.categoryService.updateCategory(edit.id, name)
       : this.categoryService.createCategory(name);
 
-    action$.subscribe(() => {
-      this.loadCategories();
-      this.cancelEdit();
+    action$.subscribe({
+      next: () => {
+        this.loadCategories();
+        this.cancelEdit();
+      },
+      error: (err) => console.error('Error saving category:', err),
     });
   }
 
@@ -56,7 +70,10 @@ export class CategoryManager implements OnInit {
 
   deleteCategory(category: Category) {
     if (confirm(`Delete category "${category.name}"?`)) {
-      this.categoryService.deleteCategory(category.id).subscribe(() => this.loadCategories());
+      this.categoryService.deleteCategory(category.id).subscribe({
+        next: () => this.loadCategories(),
+        error: (err) => console.error('Error deleting category:', err),
+      });
     }
   }
 }

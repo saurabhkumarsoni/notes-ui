@@ -48,6 +48,19 @@
           </mat-option>
         </mat-select>
       </mat-form-field>
+
+      <mat-form-field appearance="fill">
+        <mat-label>Reminder Date</mat-label>
+        <input matInput [matDatepicker]="picker" formControlName="reminderAt" />
+        <mat-datepicker-toggle matSuffix [for]="picker"></mat-datepicker-toggle>
+        <mat-datepicker touchUi #picker></mat-datepicker>
+      </mat-form-field>
+
+      <mat-form-field appearance="fill">
+        <mat-label>Reminder Time</mat-label>
+        <input matInput type="time" formControlName="reminderAtTime" />
+      </mat-form-field>
+
     </div>
 
     <div class="mt-6 flex gap-2">
@@ -64,7 +77,6 @@
 </div>
 
 <div class="search-filter-card mb-8 p-4 grid grid-cols-12 items-center gap-4">
-  <!-- Search = col‑span‑12 on mobile, col‑span‑4 on md+; centered on small, left on md+ -->
   <mat-form-field appearance="fill"
     class="search-field col-span-6 md:col-span-8 justify-self-center md:justify-self-left">
     <mat-icon matPrefix class="search-icon">search</mat-icon>
@@ -72,7 +84,6 @@
       class="search-input" />
   </mat-form-field>
 
-  <!-- Toggles = col‑span‑12 on mobile, col‑span‑8 on md+; centered on small, right on md+ -->
   <div class="col-span-12 md:col-span-4 flex justify-center md:justify-end">
     <mat-button-toggle-group [(ngModel)]="filter" (change)="onFilterChange()" appearance="legacy" class="filter-group">
       <mat-button-toggle value="all">All</mat-button-toggle>

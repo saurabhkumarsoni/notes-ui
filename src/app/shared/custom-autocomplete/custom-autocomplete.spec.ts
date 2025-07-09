@@ -1,18 +1,17 @@
 import { ComponentFixture, TestBed } from '@angular/core/testing';
 
-import { CustomAutocomplete } from './custom-autocomplete';
+import { CustomAutocompleteComponent } from './custom-autocomplete';
 
 describe('CustomAutocomplete', () => {
-  let component: CustomAutocomplete;
-  let fixture: ComponentFixture<CustomAutocomplete>;
+  let component: CustomAutocompleteComponent;
+  let fixture: ComponentFixture<CustomAutocompleteComponent>;
 
   beforeEach(async () => {
     await TestBed.configureTestingModule({
-      imports: [CustomAutocomplete]
-    })
-    .compileComponents();
+      imports: [CustomAutocompleteComponent],
+    }).compileComponents();
 
-    fixture = TestBed.createComponent(CustomAutocomplete);
+    fixture = TestBed.createComponent(CustomAutocompleteComponent);
     component = fixture.componentInstance;
     fixture.detectChanges();
   });

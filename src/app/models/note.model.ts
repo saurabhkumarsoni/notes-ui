@@ -12,6 +12,7 @@ export interface Note {
   priority: string;
   isArchived?: boolean;
   isTrashed?: boolean;
+  reminderAt?: string;
 }
 
 interface Category {

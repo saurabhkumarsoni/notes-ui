@@ -96,4 +96,10 @@ export class NoteService {
       .get<{ count: number }>(`${this.apiUrl}/count?filter=${filter}`)
       .pipe(map((response) => response.count));
   }
+
+  getDueReminders() {
+    return this.http.get<{ due: Note[]; upcoming: Note[] }>(
+      `${this.apiUrl}/reminders`
+    );
+  }
 }

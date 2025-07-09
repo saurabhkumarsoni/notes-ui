@@ -42,6 +42,12 @@ import { MatInputModule } from '@angular/material/input';
 import { MatIconModule } from '@angular/material/icon';
 import { MatSelectModule } from '@angular/material/select';
 import { MatButtonToggleModule } from '@angular/material/button-toggle';
+import {
+  MatDatepicker,
+  MatDatepickerModule,
+} from '@angular/material/datepicker';
+import { MatNativeDateModule } from '@angular/material/core';
+import { ToastrService } from 'ngx-toastr';
 
 @Component({
   selector: 'app-notes',
@@ -64,6 +70,8 @@ import { MatButtonToggleModule } from '@angular/material/button-toggle';
     MatAutocompleteModule,
     MatSelectModule,
     MatButtonToggleModule,
+    MatDatepickerModule,
+    MatNativeDateModule,
   ],
 })
 export class Notes implements OnInit, AfterViewChecked {
@@ -108,10 +116,17 @@ export class Notes implements OnInit, AfterViewChecked {
     private categoryService: CategoryService,
     private alertService: AlertService,
     private zone: NgZone,
-    private cdr: ChangeDetectorRef
+    private cdr: ChangeDetectorRef,
+    private toastr: ToastrService
   ) {}
 
   ngOnInit(): void {
+    this.checkReminders(); // check once at load
+
+    setInterval(() => {
+      this.checkReminders();
+    }, 60_000);
+
     this.fetchTags();
     this.fetchCategory();
     this.currentTagControl = this.fb.control('');
@@ -122,8 +137,9 @@ export class Notes implements OnInit, AfterViewChecked {
       tags: this.fb.array([]),
       categoryId: [null],
       priority: ['', Validators.required],
+      reminderAt: [null],
+      reminderAtTime: ['12:00'],
     });
-
     this.searchInput$
       .pipe(
         debounceTime(300),
@@ -162,6 +178,10 @@ export class Notes implements OnInit, AfterViewChecked {
       .subscribe((count) => this.archiveCount.set(count));
   }
 
+  private notifyReminder(n: Note) {
+    this.toastr.info(`⏰ Reminder: ${n.name}`, 'Note Reminder');
+  }
+
   get tags(): FormArray {
     return this.noteForm.get('tags') as FormArray;
   }
@@ -187,6 +207,13 @@ export class Notes implements OnInit, AfterViewChecked {
   }
 
   onSubmit(): void {
+    const fv = this.noteForm.value;
+    if (fv.reminderAt) {
+      const [hh, mm] = fv.reminderAtTime.split(':').map(Number);
+      fv.reminderAt.setHours(hh, mm);
+    }
+    delete fv.reminderAtTime;
+
     if (this.noteForm.invalid) return;
 
     const formValue = this.noteForm.value;
@@ -196,6 +223,7 @@ export class Notes implements OnInit, AfterViewChecked {
       tags: formValue.tags.map((t: string) => ({ name: t })),
       categoryId: formValue.categoryId,
       priority: formValue.priority,
+      reminderAt: formValue.reminderAt ?? null,
     };
 
     const request$ = this.editingNoteId
@@ -377,5 +405,13 @@ export class Notes implements OnInit, AfterViewChecked {
 
   onSearch(term: string): void {
     this.searchInput$.next(term);
+  }
+
+  checkReminders() {
+    this.noteService.getDueReminders().subscribe(({ due, upcoming }) => {
+      due.forEach((n: any) =>
+        this.toastr.info(`⏰ Reminder: ${n.name}`, 'Note Reminder')
+      );
+    });
   }
 }

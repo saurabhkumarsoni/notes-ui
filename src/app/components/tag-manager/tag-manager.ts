@@ -34,7 +34,10 @@ export class TagManagerComponent implements OnInit {
   }
 
   loadTags() {
-    this.tagService.getTags().subscribe((tags) => this.tags.set(tags));
+    this.tagService.getTags().subscribe({
+      next: (tags) => this.tags.set(tags),
+      error: (err) => console.error('Error loading tags:', err),
+    });
   }
 
   saveTag() {
@@ -44,14 +47,20 @@ export class TagManagerComponent implements OnInit {
     const editing = this.editingTag();
 
     if (editing) {
-      this.tagService.updateTag(editing.id, name).subscribe(() => {
-        this.loadTags();
-        this.cancelEdit();
+      this.tagService.updateTag(editing.id, name).subscribe({
+        next: () => {
+          this.loadTags();
+          this.cancelEdit();
+        },
+        error: (err) => console.error('Error updating tag:', err),
       });
     } else {
-      this.tagService.createTag(name).subscribe(() => {
-        this.loadTags();
-        this.tagForm.reset();
+      this.tagService.createTag(name).subscribe({
+        next: () => {
+          this.loadTags();
+          this.tagForm.reset();
+        },
+        error: (err) => console.error('Error creating tag:', err),
       });
     }
   }
@@ -68,7 +77,10 @@ export class TagManagerComponent implements OnInit {
 
   deleteTag(tag: Tag) {
     if (confirm(`Delete tag "${tag.name}"?`)) {
-      this.tagService.deleteTag(tag.id).subscribe(() => this.loadTags());
+      this.tagService.deleteTag(tag.id).subscribe({
+        next: () => this.loadTags(),
+        error: (err) => console.error('Error deleting tag:', err),
+      });
     }
   }
 }

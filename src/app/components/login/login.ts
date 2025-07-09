@@ -39,6 +39,7 @@ export class Login implements OnInit {
   }
   onSubmit(): void {
     if (this.loginForm.invalid) {
+      this.loginForm.markAllAsTouched();
       this.alert.error('Please enter valid email and password.');
       return;
     }
