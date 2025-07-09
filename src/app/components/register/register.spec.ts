@@ -13,20 +13,20 @@ import { AlertService } from '../../shared/alert.service';
 
 // Mock services
 class MockAuthService {
-  register = jasmine
-    .createSpy('register')
-    .and.returnValue(of({ message: 'Registration successful' }));
+  register = jest
+    .fn()
+    .mockReturnValue(of({ message: 'Registration successful' }));
 }
 
 class MockAlertService {
-  success = jasmine.createSpy('success');
-  error = jasmine.createSpy('error');
+  success = jest.fn();
+  error = jest.fn();
 }
 
 class MockRouter {
-  navigate = jasmine.createSpy('navigate');
-  createUrlTree = jasmine.createSpy('createUrlTree').and.returnValue({});
-  serializeUrl = jasmine.createSpy('serializeUrl').and.returnValue('/test-url');
+  navigate = jest.fn();
+  createUrlTree = jest.fn().mockReturnValue({});
+  serializeUrl = jest.fn().mockReturnValue('/test-url');
   events = of(new NavigationEnd(1, '/test', '/test'));
 }
 
@@ -89,28 +89,28 @@ describe('Register', () => {
     it('should validate firstName', () => {
       const control = component.registrationForm.get('firstName');
       control?.setValue('');
-      expect(control?.hasError('required')).toBeTrue();
+      expect(control?.hasError('required')).toBe(true);
 
       control?.setValue('John');
-      expect(control?.valid).toBeTrue();
+      expect(control?.valid).toBe(true);
     });
 
     it('should validate email format', () => {
       const control = component.registrationForm.get('email');
       control?.setValue('invalid');
-      expect(control?.hasError('email')).toBeTrue();
+      expect(control?.hasError('email')).toBe(true);
 
       control?.setValue('valid@example.com');
-      expect(control?.valid).toBeTrue();
+      expect(control?.valid).toBe(true);
     });
 
     it('should validate password length', () => {
       const control = component.registrationForm.get('password');
       control?.setValue('123');
-      expect(control?.hasError('minlength')).toBeTrue();
+      expect(control?.hasError('minlength')).toBe(true);
 
       control?.setValue('longEnoughPassword');
-      expect(control?.valid).toBeTrue();
+      expect(control?.valid).toBe(true);
     });
   });
 
@@ -156,7 +156,7 @@ describe('Register', () => {
     });
 
     it('should handle backend error message', () => {
-      mockAuthService.register.and.returnValue(
+      mockAuthService.register.mockReturnValue(
         throwError(() => ({
           error: { message: 'Email already exists' },
         }))
@@ -189,7 +189,7 @@ describe('Register', () => {
         password: 'password123',
       });
 
-      mockAuthService.register.and.returnValue(throwError(() => ({})));
+      mockAuthService.register.mockReturnValue(throwError(() => ({})));
       component.onSubmit();
       expect(mockAlertService.error).toHaveBeenCalledWith(
         'Registration failed. Please try again.'

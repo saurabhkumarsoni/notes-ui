@@ -12,26 +12,26 @@ import { AlertService } from '../../shared/alert.service';
 
 // Mock services
 class MockAuthService {
-  login = jasmine.createSpy('login').and.returnValue(
+  login = jest.fn().mockReturnValue(
     of({
       accessToken: 'mock-access-token',
       refreshToken: 'mock-refresh-token',
       user: { id: 1, firstName: 'John', email: 'john@example.com' },
     })
   );
-  setTokens = jasmine.createSpy('setTokens');
-  setUser = jasmine.createSpy('setUser');
+  setTokens = jest.fn();
+  setUser = jest.fn();
 }
 
 class MockAlertService {
-  success = jasmine.createSpy('success');
-  error = jasmine.createSpy('error');
+  success = jest.fn();
+  error = jest.fn();
 }
 
 class MockRouter {
-  navigate = jasmine.createSpy('navigate');
-  createUrlTree = jasmine.createSpy('createUrlTree').and.returnValue({});
-  serializeUrl = jasmine.createSpy('serializeUrl').and.returnValue('/test-url');
+  navigate = jest.fn();
+  createUrlTree = jest.fn().mockReturnValue({});
+  serializeUrl = jest.fn().mockReturnValue('/test-url');
   events = of(new NavigationEnd(1, '/test', '/test'));
 }
 
@@ -214,7 +214,7 @@ describe('Login', () => {
           },
         },
       };
-      mockAuthService.login.and.returnValue(throwError(() => errorResponse));
+      mockAuthService.login.mockReturnValue(throwError(() => errorResponse));
 
       component.onSubmit();
 
@@ -231,7 +231,7 @@ describe('Login', () => {
           message: 'User not found',
         },
       };
-      mockAuthService.login.and.returnValue(throwError(() => errorResponse));
+      mockAuthService.login.mockReturnValue(throwError(() => errorResponse));
 
       component.onSubmit();
 
@@ -242,7 +242,7 @@ describe('Login', () => {
 
     it('should handle login error with fallback message', () => {
       const errorResponse = {};
-      mockAuthService.login.and.returnValue(throwError(() => errorResponse));
+      mockAuthService.login.mockReturnValue(throwError(() => errorResponse));
 
       component.onSubmit();
 
@@ -254,7 +254,7 @@ describe('Login', () => {
     });
 
     it('should handle network error', () => {
-      mockAuthService.login.and.returnValue(throwError(() => 'Network error'));
+      mockAuthService.login.mockReturnValue(throwError(() => 'Network error'));
 
       component.onSubmit();
 

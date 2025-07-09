@@ -14,7 +14,6 @@ export const AuthInterceptor: HttpInterceptorFn = (
 ) => {
   const authService = inject(AuthService);
 
-  const accessToken = authService.getAccessToken();
   const isAuthRoute =
     req.url.includes('/auth/login') ||
     req.url.includes('/auth/signup') ||
@@ -24,6 +23,8 @@ export const AuthInterceptor: HttpInterceptorFn = (
   if (isAuthRoute) {
     return next(req);
   }
+
+  const accessToken = authService.getAccessToken();
 
   const authReq = accessToken
     ? req.clone({

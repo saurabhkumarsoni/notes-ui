@@ -7,20 +7,16 @@ import { TagService, Tag } from '../../services/tag.service';
 
 // Mock services
 class MockTagService {
-  getTags = jasmine.createSpy('getTags').and.returnValue(
+  getTags = jest.fn().mockReturnValue(
     of([
       { id: 1, name: 'work' },
       { id: 2, name: 'personal' },
       { id: 3, name: 'urgent' },
     ])
   );
-  createTag = jasmine
-    .createSpy('createTag')
-    .and.returnValue(of({ id: 4, name: 'new-tag' }));
-  updateTag = jasmine
-    .createSpy('updateTag')
-    .and.returnValue(of({ id: 1, name: 'updated-tag' }));
-  deleteTag = jasmine.createSpy('deleteTag').and.returnValue(of({}));
+  createTag = jest.fn().mockReturnValue(of({ id: 4, name: 'new-tag' }));
+  updateTag = jest.fn().mockReturnValue(of({ id: 1, name: 'updated-tag' }));
+  deleteTag = jest.fn().mockReturnValue(of({}));
 }
 
 describe('TagManagerComponent', () => {
@@ -160,7 +156,7 @@ describe('TagManagerComponent', () => {
 
     describe('Delete Tag', () => {
       it('should delete tag after confirmation', () => {
-        spyOn(window, 'confirm').and.returnValue(true);
+        jest.spyOn(window, 'confirm').mockReturnValue(true);
         const tagToDelete = mockTags[0];
 
         component.deleteTag(tagToDelete);
@@ -171,7 +167,7 @@ describe('TagManagerComponent', () => {
       });
 
       it('should not delete tag if not confirmed', () => {
-        spyOn(window, 'confirm').and.returnValue(false);
+        jest.spyOn(window, 'confirm').mockReturnValue(false);
         const tagToDelete = mockTags[0];
 
         component.deleteTag(tagToDelete);
@@ -223,8 +219,8 @@ describe('TagManagerComponent', () => {
 
   describe('Error Handling', () => {
     it('should handle error when loading tags', () => {
-      mockTagService.getTags.and.returnValue(throwError('Load failed'));
-      spyOn(console, 'error');
+      mockTagService.getTags.mockReturnValue(throwError(() => 'Load failed'));
+      jest.spyOn(console, 'error').mockImplementation();
 
       component.loadTags();
 
@@ -233,7 +229,9 @@ describe('TagManagerComponent', () => {
     });
 
     it('should handle error when creating tag', () => {
-      mockTagService.createTag.and.returnValue(throwError('Create failed'));
+      mockTagService.createTag.mockReturnValue(
+        throwError(() => 'Create failed')
+      );
       component.tagForm.patchValue({ name: 'new-tag' });
 
       component.saveTag();
@@ -243,7 +241,9 @@ describe('TagManagerComponent', () => {
     });
 
     it('should handle error when updating tag', () => {
-      mockTagService.updateTag.and.returnValue(throwError('Update failed'));
+      mockTagService.updateTag.mockReturnValue(
+        throwError(() => 'Update failed')
+      );
       component.editingTag.set(mockTags[0]);
       component.tagForm.patchValue({ name: 'updated-name' });
 
@@ -254,8 +254,10 @@ describe('TagManagerComponent', () => {
     });
 
     it('should handle error when deleting tag', () => {
-      mockTagService.deleteTag.and.returnValue(throwError('Delete failed'));
-      spyOn(window, 'confirm').and.returnValue(true);
+      mockTagService.deleteTag.mockReturnValue(
+        throwError(() => 'Delete failed')
+      );
+      jest.spyOn(window, 'confirm').mockReturnValue(true);
 
       component.deleteTag(mockTags[0]);
 
@@ -325,7 +327,7 @@ describe('TagManagerComponent', () => {
     });
 
     it('should complete full delete flow', () => {
-      spyOn(window, 'confirm').and.returnValue(true);
+      jest.spyOn(window, 'confirm').mockReturnValue(true);
       const tagToDelete = mockTags[0];
 
       component.deleteTag(tagToDelete);
@@ -352,7 +354,7 @@ describe('TagManagerComponent', () => {
 
   describe('Edge Cases', () => {
     it('should handle empty tags list', () => {
-      mockTagService.getTags.and.returnValue(of([]));
+      mockTagService.getTags.mockReturnValue(of([]));
 
       component.loadTags();
 

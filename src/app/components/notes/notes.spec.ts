@@ -21,26 +21,20 @@ import { Note } from '../../models/note.model';
 
 // Mock services
 class MockNoteService {
-  searchNotes = jasmine
-    .createSpy()
-    .and.returnValue(of({ notes: [], totalPages: 1 }));
-  getNotes = jasmine
-    .createSpy()
-    .and.returnValue(of({ notes: [], totalPages: 1 }));
-  addNote = jasmine.createSpy().and.returnValue(of({}));
-  updateNote = jasmine.createSpy().and.returnValue(of({}));
-  deleteNote = jasmine.createSpy().and.returnValue(of({}));
-  archiveNote = jasmine.createSpy().and.returnValue(of({}));
-  trashNote = jasmine.createSpy().and.returnValue(of({}));
-  restoreNote = jasmine.createSpy().and.returnValue(of({}));
-  getNoteCount = jasmine.createSpy().and.returnValue(of(0));
-  getDueReminders = jasmine
-    .createSpy()
-    .and.returnValue(of({ due: [], upcoming: [] }));
+  searchNotes = jest.fn().mockReturnValue(of({ notes: [], totalPages: 1 }));
+  getNotes = jest.fn().mockReturnValue(of({ notes: [], totalPages: 1 }));
+  addNote = jest.fn().mockReturnValue(of({}));
+  updateNote = jest.fn().mockReturnValue(of({}));
+  deleteNote = jest.fn().mockReturnValue(of({}));
+  archiveNote = jest.fn().mockReturnValue(of({}));
+  trashNote = jest.fn().mockReturnValue(of({}));
+  restoreNote = jest.fn().mockReturnValue(of({}));
+  getNoteCount = jest.fn().mockReturnValue(of(0));
+  getDueReminders = jest.fn().mockReturnValue(of({ due: [], upcoming: [] }));
 }
 
 class MockTagService {
-  getTags = jasmine.createSpy().and.returnValue(
+  getTags = jest.fn().mockReturnValue(
     of([
       { id: 1, name: 'work' },
       { id: 2, name: 'personal' },
@@ -49,7 +43,7 @@ class MockTagService {
 }
 
 class MockCategoryService {
-  getCategories = jasmine.createSpy().and.returnValue(
+  getCategories = jest.fn().mockReturnValue(
     of([
       { id: 1, name: 'Work' },
       { id: 2, name: 'Personal' },
@@ -58,17 +52,15 @@ class MockCategoryService {
 }
 
 class MockAlertService {
-  success = jasmine.createSpy();
-  error = jasmine.createSpy();
-  confirm = jasmine
-    .createSpy()
-    .and.returnValue(Promise.resolve({ isConfirmed: true }));
+  success = jest.fn();
+  error = jest.fn();
+  confirm = jest.fn().mockResolvedValue({ isConfirmed: true });
 }
 
 class MockToastrService {
-  info = jasmine.createSpy();
-  success = jasmine.createSpy();
-  error = jasmine.createSpy();
+  info = jest.fn();
+  success = jest.fn();
+  error = jest.fn();
 }
 
 describe('Notes Component', () => {
@@ -108,7 +100,7 @@ describe('Notes Component', () => {
   it('should initialize the form correctly', () => {
     component.ngOnInit();
     expect(component.noteForm).toBeDefined();
-    expect(component.noteForm.get('name')?.hasError('required')).toBeTrue();
+    expect(component.noteForm.get('name')?.hasError('required')).toBe(true);
   });
 
   it('should submit valid form and call addNote', () => {

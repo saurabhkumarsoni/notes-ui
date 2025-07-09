@@ -10,16 +10,16 @@ import { UserStoreService } from '../../services/user-store.service';
 
 // Mock services
 class MockAuthService {
-  getUser = jasmine.createSpy('getUser').and.returnValue({
+  getUser = jest.fn().mockReturnValue({
     id: 1,
     firstName: 'John',
     email: 'john@example.com',
   });
-  clearTokens = jasmine.createSpy('clearTokens');
+  clearTokens = jest.fn();
 }
 
 class MockUserService {
-  getUserById = jasmine.createSpy('getUserById').and.returnValue(
+  getUserById = jest.fn().mockReturnValue(
     of({
       id: 1,
       firstName: 'John',
@@ -29,14 +29,12 @@ class MockUserService {
 }
 
 class MockUserStoreService {
-  profileImage = jasmine
-    .createSpy('profileImage')
-    .and.returnValue('https://example.com/profile.jpg');
-  setProfileImage = jasmine.createSpy('setProfileImage');
+  profileImage = jest.fn().mockReturnValue('https://example.com/profile.jpg');
+  setProfileImage = jest.fn();
 }
 
 class MockRouter {
-  navigate = jasmine.createSpy('navigate');
+  navigate = jest.fn();
 }
 
 describe('Navbar', () => {
@@ -88,7 +86,7 @@ describe('Navbar', () => {
     });
 
     it('should set default userName when user has no firstName', () => {
-      mockAuthService.getUser.and.returnValue({
+      mockAuthService.getUser.mockReturnValue({
         id: 1,
         firstName: null,
         email: 'john@example.com',
@@ -109,7 +107,7 @@ describe('Navbar', () => {
     });
 
     it('should not fetch profile image when user has no ID', () => {
-      mockAuthService.getUser.and.returnValue({
+      mockAuthService.getUser.mockReturnValue({
         firstName: 'John',
         email: 'john@example.com',
       });
@@ -120,10 +118,10 @@ describe('Navbar', () => {
     });
 
     it('should handle error when fetching user profile image', () => {
-      mockUserService.getUserById.and.returnValue(
+      mockUserService.getUserById.mockReturnValue(
         throwError(() => 'Profile fetch failed')
       );
-      spyOn(console, 'error');
+      jest.spyOn(console, 'error').mockImplementation();
 
       component.ngOnInit();
 
@@ -143,7 +141,7 @@ describe('Navbar', () => {
     });
 
     it('should return default avatar when no profile image', () => {
-      mockUserStoreService.profileImage.and.returnValue(null);
+      mockUserStoreService.profileImage.mockReturnValue(null);
 
       const profileImage = component.profileImage;
 
@@ -151,7 +149,7 @@ describe('Navbar', () => {
     });
 
     it('should return default avatar when profile image is undefined', () => {
-      mockUserStoreService.profileImage.and.returnValue(undefined);
+      mockUserStoreService.profileImage.mockReturnValue(undefined);
 
       const profileImage = component.profileImage;
 
@@ -245,7 +243,7 @@ describe('Navbar', () => {
 
   describe('User State Management', () => {
     it('should handle null user gracefully', () => {
-      mockAuthService.getUser.and.returnValue(null);
+      mockAuthService.getUser.mockReturnValue(null);
 
       component.ngOnInit();
 
@@ -254,7 +252,7 @@ describe('Navbar', () => {
     });
 
     it('should handle user without firstName', () => {
-      mockAuthService.getUser.and.returnValue({
+      mockAuthService.getUser.mockReturnValue({
         id: 1,
         email: 'john@example.com',
       });
@@ -265,7 +263,7 @@ describe('Navbar', () => {
     });
 
     it('should handle user with empty firstName', () => {
-      mockAuthService.getUser.and.returnValue({
+      mockAuthService.getUser.mockReturnValue({
         id: 1,
         firstName: '',
         email: 'john@example.com',
@@ -325,12 +323,12 @@ describe('Navbar', () => {
 
   describe('Error Scenarios', () => {
     it('should handle getUserById service error gracefully', () => {
-      mockUserService.getUserById.and.returnValue(
+      mockUserService.getUserById.mockReturnValue(
         throwError(() => ({
           error: 'User not found',
         }))
       );
-      spyOn(console, 'error');
+      jest.spyOn(console, 'error').mockImplementation();
 
       component.ngOnInit();
 
@@ -343,10 +341,10 @@ describe('Navbar', () => {
     });
 
     it('should handle network errors when fetching profile', () => {
-      mockUserService.getUserById.and.returnValue(
+      mockUserService.getUserById.mockReturnValue(
         throwError(() => 'Network error')
       );
-      spyOn(console, 'error');
+      jest.spyOn(console, 'error').mockImplementation();
 
       component.ngOnInit();
 

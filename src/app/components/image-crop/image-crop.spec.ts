@@ -12,11 +12,11 @@ import { ImageCropComponent } from './image-crop';
 
 // Mock classes
 class MockMatDialogRef {
-  close = jasmine.createSpy('close');
+  close = jest.fn();
 }
 
 class MockChangeDetectorRef {
-  detectChanges = jasmine.createSpy('detectChanges');
+  detectChanges = jest.fn();
 }
 
 describe('ImageCropComponent', () => {
@@ -61,7 +61,7 @@ describe('ImageCropComponent', () => {
     // ✅ Use fakeAsync only
     it('should run after delay', fakeAsync(() => {
       tick(500);
-      expect(true).toBeTrue();
+      expect(true).toBe(true);
     }));
   });
 
@@ -75,7 +75,7 @@ describe('ImageCropComponent', () => {
         cropperPosition: { x1: 0, y1: 0, x2: 100, y2: 100 },
         imagePosition: { x1: 0, y1: 0, x2: 100, y2: 100 },
       };
-      spyOn(console, 'log');
+      jest.spyOn(console, 'log').mockImplementation();
 
       component.onImageCropped(mockCroppedEvent);
 
@@ -99,7 +99,7 @@ describe('ImageCropComponent', () => {
       component.onImageCropped(mockCroppedEvent);
 
       expect(component.croppedEvent?.base64).toBe('data:image/png;base64,test');
-      expect(component.croppedEvent?.blob).toEqual(jasmine.any(Blob));
+      expect(component.croppedEvent?.blob).toEqual(expect.any(Blob));
       expect(component.croppedEvent?.width).toBe(200);
       expect(component.croppedEvent?.height).toBe(150);
     });
@@ -128,22 +128,20 @@ describe('ImageCropComponent', () => {
       // Mock FileReader
       const mockFileReader = {
         onload: null as any,
-        readAsDataURL: jasmine
-          .createSpy('readAsDataURL')
-          .and.callFake(function (this: any) {
-            setTimeout(() => {
-              this.result = 'data:image/png;base64,test';
-              if (this.onload) this.onload();
-            }, 0);
-          }),
+        readAsDataURL: jest.fn().mockImplementation(function (this: any) {
+          setTimeout(() => {
+            this.result = 'data:image/png;base64,test';
+            if (this.onload) this.onload();
+          }, 0);
+        }),
       };
-      spyOn(window, 'FileReader').and.returnValue(mockFileReader as any);
+      jest.spyOn(window, 'FileReader').mockReturnValue(mockFileReader as any);
 
       component.onAccept();
 
       setTimeout(() => {
         expect(mockDialogRef.close).toHaveBeenCalledWith({
-          file: jasmine.any(File),
+          file: expect.any(File),
           objectUrl: 'data:image/png;base64,test',
         });
         done();
@@ -151,7 +149,7 @@ describe('ImageCropComponent', () => {
     });
 
     it('should warn and return if no cropped image available', () => {
-      spyOn(console, 'warn');
+      jest.spyOn(console, 'warn').mockImplementation();
       component.croppedEvent = null;
 
       component.onAccept();
@@ -163,7 +161,7 @@ describe('ImageCropComponent', () => {
     });
 
     it('should warn and return if no blob in cropped event', () => {
-      spyOn(console, 'warn');
+      jest.spyOn(console, 'warn').mockImplementation();
       component.croppedEvent = {
         base64: 'data:image/png;base64,test',
         blob: null,
@@ -198,21 +196,19 @@ describe('ImageCropComponent', () => {
       // Mock FileReader
       const mockFileReader = {
         onload: null as any,
-        readAsDataURL: jasmine
-          .createSpy('readAsDataURL')
-          .and.callFake(function (this: any) {
-            setTimeout(() => {
-              this.result = 'data:image/png;base64,test';
-              if (this.onload) this.onload();
-            }, 0);
-          }),
+        readAsDataURL: jest.fn().mockImplementation(function (this: any) {
+          setTimeout(() => {
+            this.result = 'data:image/png;base64,test';
+            if (this.onload) this.onload();
+          }, 0);
+        }),
       };
-      spyOn(window, 'FileReader').and.returnValue(mockFileReader as any);
+      jest.spyOn(window, 'FileReader').mockReturnValue(mockFileReader as any);
 
       component.onAccept();
 
       setTimeout(() => {
-        const callArgs = mockDialogRef.close.calls.mostRecent().args[0];
+        const callArgs = (mockDialogRef.close as jest.Mock).mock.calls[0][0];
         expect(callArgs.file.name).toBe('profile.png');
         expect(callArgs.file.type).toBe('image/png');
         done();
@@ -235,21 +231,19 @@ describe('ImageCropComponent', () => {
       // Mock FileReader
       const mockFileReader = {
         onload: null as any,
-        readAsDataURL: jasmine
-          .createSpy('readAsDataURL')
-          .and.callFake(function (this: any) {
-            setTimeout(() => {
-              this.result = 'data:image/jpeg;base64,test';
-              if (this.onload) this.onload();
-            }, 0);
-          }),
+        readAsDataURL: jest.fn().mockImplementation(function (this: any) {
+          setTimeout(() => {
+            this.result = 'data:image/jpeg;base64,test';
+            if (this.onload) this.onload();
+          }, 0);
+        }),
       };
-      spyOn(window, 'FileReader').and.returnValue(mockFileReader as any);
+      jest.spyOn(window, 'FileReader').mockReturnValue(mockFileReader as any);
 
       component.onAccept();
 
       setTimeout(() => {
-        const callArgs = mockDialogRef.close.calls.mostRecent().args[0];
+        const callArgs = (mockDialogRef.close as jest.Mock).mock.calls[0][0];
         expect(callArgs.file.type).toBe('image/jpeg');
         done();
       }, 10);
@@ -271,16 +265,14 @@ describe('ImageCropComponent', () => {
       // Mock FileReader
       const mockFileReader = {
         onload: null as any,
-        readAsDataURL: jasmine
-          .createSpy('readAsDataURL')
-          .and.callFake(function (this: any) {
-            setTimeout(() => {
-              this.result = 'data:image/png;base64,test';
-              if (this.onload) this.onload();
-            }, 0);
-          }),
+        readAsDataURL: jest.fn().mockImplementation(function (this: any) {
+          setTimeout(() => {
+            this.result = 'data:image/png;base64,test';
+            if (this.onload) this.onload();
+          }, 0);
+        }),
       };
-      spyOn(window, 'FileReader').and.returnValue(mockFileReader as any);
+      jest.spyOn(window, 'FileReader').mockReturnValue(mockFileReader as any);
 
       // Simulate cropping
       component.onImageCropped(mockCroppedEvent);
@@ -291,7 +283,7 @@ describe('ImageCropComponent', () => {
 
       setTimeout(() => {
         expect(mockDialogRef.close).toHaveBeenCalledWith({
-          file: jasmine.any(File),
+          file: expect.any(File),
           objectUrl: 'data:image/png;base64,test',
         });
         done();
@@ -336,15 +328,13 @@ describe('ImageCropComponent', () => {
       const mockFileReader = {
         onload: null as any,
         onerror: null as any,
-        readAsDataURL: jasmine
-          .createSpy('readAsDataURL')
-          .and.callFake(function (this: any) {
-            setTimeout(() => {
-              if (this.onerror) this.onerror(new Error('FileReader error'));
-            }, 0);
-          }),
+        readAsDataURL: jest.fn().mockImplementation(function (this: any) {
+          setTimeout(() => {
+            if (this.onerror) this.onerror(new Error('FileReader error'));
+          }, 0);
+        }),
       };
-      spyOn(window, 'FileReader').and.returnValue(mockFileReader as any);
+      jest.spyOn(window, 'FileReader').mockReturnValue(mockFileReader as any);
 
       component.onAccept();
 
@@ -364,7 +354,7 @@ describe('ImageCropComponent', () => {
         cropperPosition: null,
       } as any;
 
-      spyOn(console, 'warn');
+      jest.spyOn(console, 'warn').mockImplementation();
       component.croppedEvent = invalidCroppedEvent;
 
       component.onAccept();
@@ -376,7 +366,7 @@ describe('ImageCropComponent', () => {
     });
 
     it('should handle undefined cropped event', () => {
-      spyOn(console, 'warn');
+      jest.spyOn(console, 'warn').mockImplementation();
       component.croppedEvent = undefined as any;
 
       component.onAccept();

@@ -7,20 +7,20 @@ import { CategoryService, Category } from '../../services/category.service';
 
 // Mock services
 class MockCategoryService {
-  getCategories = jasmine.createSpy('getCategories').and.returnValue(
+  getCategories = jest.fn().mockReturnValue(
     of([
       { id: 1, name: 'Work' },
       { id: 2, name: 'Personal' },
       { id: 3, name: 'Study' },
     ])
   );
-  createCategory = jasmine
-    .createSpy('createCategory')
-    .and.returnValue(of({ id: 4, name: 'New Category' }));
-  updateCategory = jasmine
-    .createSpy('updateCategory')
-    .and.returnValue(of({ id: 1, name: 'Updated Category' }));
-  deleteCategory = jasmine.createSpy('deleteCategory').and.returnValue(of({}));
+  createCategory = jest
+    .fn()
+    .mockReturnValue(of({ id: 4, name: 'New Category' }));
+  updateCategory = jest
+    .fn()
+    .mockReturnValue(of({ id: 1, name: 'Updated Category' }));
+  deleteCategory = jest.fn().mockReturnValue(of({}));
 }
 
 describe('CategoryManager', () => {
@@ -158,7 +158,7 @@ describe('CategoryManager', () => {
 
     describe('Delete Category', () => {
       it('should delete category after confirmation', () => {
-        spyOn(window, 'confirm').and.returnValue(true);
+        jest.spyOn(window, 'confirm').mockReturnValue(true);
         const categoryToDelete = mockCategories[0];
 
         component.deleteCategory(categoryToDelete);
@@ -169,7 +169,7 @@ describe('CategoryManager', () => {
       });
 
       it('should not delete category if not confirmed', () => {
-        spyOn(window, 'confirm').and.returnValue(false);
+        jest.spyOn(window, 'confirm').mockReturnValue(false);
         const categoryToDelete = mockCategories[0];
 
         component.deleteCategory(categoryToDelete);
@@ -221,10 +221,10 @@ describe('CategoryManager', () => {
 
   describe('Error Handling', () => {
     it('should handle error when loading categories', () => {
-      mockCategoryService.getCategories.and.returnValue(
+      mockCategoryService.getCategories.mockReturnValue(
         throwError(() => 'Load failed')
       );
-      spyOn(console, 'error');
+      jest.spyOn(console, 'error').mockImplementation();
 
       component.loadCategories();
 
@@ -233,7 +233,7 @@ describe('CategoryManager', () => {
     });
 
     it('should handle error when creating category', () => {
-      mockCategoryService.createCategory.and.returnValue(
+      mockCategoryService.createCategory.mockReturnValue(
         throwError(() => 'Create failed')
       );
       component.categoryForm.patchValue({ name: 'New Category' });
@@ -247,7 +247,7 @@ describe('CategoryManager', () => {
     });
 
     it('should handle error when updating category', () => {
-      mockCategoryService.updateCategory.and.returnValue(
+      mockCategoryService.updateCategory.mockReturnValue(
         throwError(() => 'Update failed')
       );
       component.editingCategory.set(mockCategories[0]);
@@ -263,10 +263,10 @@ describe('CategoryManager', () => {
     });
 
     it('should handle error when deleting category', () => {
-      mockCategoryService.deleteCategory.and.returnValue(
+      mockCategoryService.deleteCategory.mockReturnValue(
         throwError(() => 'Delete failed')
       );
-      spyOn(window, 'confirm').and.returnValue(true);
+      jest.spyOn(window, 'confirm').mockReturnValue(true);
 
       component.deleteCategory(mockCategories[0]);
 
@@ -339,7 +339,7 @@ describe('CategoryManager', () => {
     });
 
     it('should complete full delete flow', () => {
-      spyOn(window, 'confirm').and.returnValue(true);
+      jest.spyOn(window, 'confirm').mockReturnValue(true);
       const categoryToDelete = mockCategories[0];
 
       component.deleteCategory(categoryToDelete);
@@ -366,7 +366,7 @@ describe('CategoryManager', () => {
 
   describe('Edge Cases', () => {
     it('should handle empty categories list', () => {
-      mockCategoryService.getCategories.and.returnValue(of([]));
+      mockCategoryService.getCategories.mockReturnValue(of([]));
 
       component.loadCategories();
 
